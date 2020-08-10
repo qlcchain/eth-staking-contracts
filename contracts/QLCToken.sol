@@ -34,6 +34,8 @@ contract QLCToken is ERC20, Ownable {
     }
 
     function IssueLock(uint256 amount, string memory r_hash) public onlyOwner {
+        //1. check r_hash repeatability
+
         //1. get current height
         uint256 currentHeight = block.number;
 
@@ -63,7 +65,7 @@ contract QLCToken is ERC20, Ownable {
         emit IssueTokenUnlock(r_hash, r_origin);
     }
     
-    function pledgeFetch(string memory r_hash) public onlyOwner {
+    function IssueFetch(string memory r_hash) public onlyOwner {
         //1. check timer
         require(_isTimeOut(r_hash));
 
@@ -76,6 +78,9 @@ contract QLCToken is ERC20, Ownable {
 
 
     function DestoryLock(uint256 amount, string memory r_hash) public {
+        //1. basic check     
+        //   r_hash repeatability
+        
         require(balanceOf(msg.sender)>0);
         
         //1. get current height
@@ -131,14 +136,14 @@ contract QLCToken is ERC20, Ownable {
     }
     
     
-    function _isTimeOut(string memory r_hash) private returns (bool) {
+    function _isTimeOut(string memory r_hash) private view returns (bool) {
         uint256 currentHeight = block.number ;
         uint256 originHeight =  hashTimers[r_hash].height;
         return (currentHeight.sub(originHeight) > interval ? true: false);
     }
     
     
-    function _isBalanceEnough(address addr, uint256 amount) private returns (bool){
+    function _isBalanceEnough(address addr, uint256 amount) private view returns (bool){
         uint256 lockBalance = lockAmount[addr];
         uint256 totalBalance = balanceOf(addr);
         return (totalBalance.sub(lockBalance) > amount ? true: false); 
