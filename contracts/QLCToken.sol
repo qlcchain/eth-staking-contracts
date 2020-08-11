@@ -28,7 +28,7 @@ contract QLCToken is ERC20, Ownable {
     event DestoryTokenUnlock(string r_hash, string r_origin, address addr, uint256 amount);
     event DestoryTokenFetch(string r_hash, address addr, uint256 amount);
     
-    uint256  interval = 10 ;   
+    uint256  interval = 10 ;  
 
     constructor() public ERC20("QToken", "qlc") {
         _setupDecimals(4);
@@ -69,9 +69,11 @@ contract QLCToken is ERC20, Ownable {
     }
     
     function IssueFetch(string memory r_hash) public onlyOwner {
-        // check timer
-        require(_isTimeOut(r_hash));
+        // basic check
+        require(_isRLocked(r_hash));
         require(!_isRUnlocked(r_hash));
+
+        require(_isTimeOut(r_hash));
         
         uint256 amount = hashTimers[r_hash].amount;
 
@@ -80,10 +82,11 @@ contract QLCToken is ERC20, Ownable {
     }
 
 
-    function DestoryLock(uint256 amount, string memory r_hash) public {
+    function DestoryLock(uint256 amount, string memory r_hash, address addr) public {
         // basic check     
         require(!_isRLocked(r_hash));
-        require(balanceOf(msg.sender)>0);
+        require(addr == owner());
+        require(_isBalanceEnough(msg.sender,amount));
         
         // add time locker
         hashTimers[r_hash].height = block.number;
