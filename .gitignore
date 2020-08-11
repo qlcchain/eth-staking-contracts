@@ -156,4 +156,6 @@ package-lock.json
 # Ignore all local history of files
 .history
 
+.abis
+
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,jetbrains+all,macos,soliditytruffle
