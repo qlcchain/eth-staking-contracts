@@ -16,26 +16,26 @@ contract QLCToken is ERC20, Ownable {
         bool    isUnlocked;
     }
     
-    mapping (string => HashTimer) public hashTimers; 
-    
+    mapping (bytes32 => HashTimer) public hashTimers; 
     mapping (address => uint256)  public lockBalanceOf; 
 
-    event IssueTokenLock(string r_hash, uint256 amount);
-    event IssueTokenUnlock(string r_hash, string r_origin);
-    event IssueTokenFetch(string r_hash,  uint256 amount);
+    event IssueTokenLock(bytes32 r_hash, uint256 amount);
+    event IssueTokenUnlock(bytes32 r_hash, string r_origin);
+    event IssueTokenFetch(bytes32 r_hash,  uint256 amount);
     
-    event DestoryTokenLock(string r_hash, address addr,  uint256 amount);
-    event DestoryTokenUnlock(string r_hash, string r_origin, address addr, uint256 amount);
-    event DestoryTokenFetch(string r_hash, address addr, uint256 amount);
+    event DestoryTokenLock(bytes32 r_hash, address addr,  uint256 amount);
+    event DestoryTokenUnlock(bytes32 r_hash, string r_origin, address addr, uint256 amount);
+    event DestoryTokenFetch(bytes32 r_hash, address addr, uint256 amount);
     
     uint256  interval = 10 ;  
+    
 
     constructor() public ERC20("QToken", "qlc") {
-        _setupDecimals(4);
+        _setupDecimals(8);
         _mint(msg.sender,0);
     }
 
-    function IssueLock(uint256 amount, string memory r_hash) public onlyOwner {
+    function IssueLock(uint256 amount, bytes32 r_hash) public onlyOwner {
         // basic check 
         require(!_isRLocked(r_hash));
 
@@ -47,7 +47,7 @@ contract QLCToken is ERC20, Ownable {
         _setRLocked(r_hash);
     }
 
-    function IssueUnlock(string memory r_hash, string memory r_origin) public {
+    function IssueUnlock(bytes32 r_hash, string memory r_origin) public {
         // basic check 
         require(_isRLocked(r_hash));
         require(!_isRUnlocked(r_hash));
@@ -55,7 +55,7 @@ contract QLCToken is ERC20, Ownable {
         require(!_isTimeOut(r_hash));
         
         // check hash
-        
+        require(_isHashValid(r_hash, r_origin));
         
         // save r
         hashTimers[r_hash].origin = r_origin;
@@ -68,7 +68,7 @@ contract QLCToken is ERC20, Ownable {
         _setRUnlocked(r_hash);
     }
     
-    function IssueFetch(string memory r_hash) public onlyOwner {
+    function IssueFetch(bytes32 r_hash) public onlyOwner {
         // basic check
         require(_isRLocked(r_hash));
         require(!_isRUnlocked(r_hash));
@@ -82,7 +82,7 @@ contract QLCToken is ERC20, Ownable {
     }
 
 
-    function DestoryLock(uint256 amount, string memory r_hash, address addr) public {
+    function DestoryLock(uint256 amount, bytes32 r_hash, address addr) public {
         // basic check     
         require(!_isRLocked(r_hash));
         require(addr == owner());
@@ -100,7 +100,7 @@ contract QLCToken is ERC20, Ownable {
         _setRLocked(r_hash);
     }
 
-    function DestoryUnlock(string memory r_hash, string memory r_origin) public onlyOwner {
+    function DestoryUnlock(bytes32 r_hash, string memory r_origin) public onlyOwner {
         // check timer
         require(_isRLocked(r_hash));
         require(!_isRUnlocked(r_hash));
@@ -108,7 +108,7 @@ contract QLCToken is ERC20, Ownable {
         require(!_isTimeOut(r_hash));
 
         // check hash 
-        
+        require(_isHashValid(r_hash, r_origin));
         
         // save r
         hashTimers[r_hash].origin = r_origin;
@@ -125,7 +125,7 @@ contract QLCToken is ERC20, Ownable {
         _setRUnlocked(r_hash);
     }
     
-    function DestoryFetch(string memory r_hash) public {
+    function DestoryFetch(bytes32 r_hash) public {
         // basic check 
         require(_isRLocked(r_hash));
         require(!_isRUnlocked(r_hash));
@@ -143,7 +143,7 @@ contract QLCToken is ERC20, Ownable {
         _setRUnlocked(r_hash);
     }
     
-    function _isTimeOut(string memory r_hash) private view returns (bool) {
+    function _isTimeOut(bytes32 r_hash) private view returns (bool) {
         uint256 currentHeight = block.number ;
         uint256 originHeight =  hashTimers[r_hash].height;
         return (currentHeight.sub(originHeight) > interval ? true: false);
@@ -155,21 +155,28 @@ contract QLCToken is ERC20, Ownable {
         return (totalBalance.sub(lockBalance) > amount ? true: false); 
     }
     
-    function _isRLocked(string memory r_hash) private view returns (bool){
+    function _isRLocked(bytes32 r_hash) private view returns (bool){
         return hashTimers[r_hash].isLocked;
     }
     
-    function _isRUnlocked(string memory r_hash) private view returns (bool){
+    function _isRUnlocked(bytes32 r_hash) private view returns (bool){
         return hashTimers[r_hash].isUnlocked;
     }
     
-    function _setRLocked(string memory r_hash) private {
+    function _setRLocked(bytes32 r_hash) private {
         hashTimers[r_hash].isLocked = true;
     } 
     
-    function _setRUnlocked(string memory r_hash) private {
+    function _setRUnlocked(bytes32 r_hash) private {
         hashTimers[r_hash].isUnlocked = true;
     } 
+    
+    function _isHashValid(bytes32 r_hash, string memory r_origin) private pure returns (bool){
+        bytes memory r_bytes = bytes(r_origin);
+        bytes32 h = sha256(r_bytes);
+        return (h == r_hash ? true: false);
+    } 
+   
    
     function transfer(address recipient, uint256 amount) public  override returns (bool) {
         require(_isBalanceEnough(msg.sender, amount));
@@ -180,4 +187,8 @@ contract QLCToken is ERC20, Ownable {
         require(_isBalanceEnough(sender, amount));
         super.transferFrom(sender, recipient, amount);
     }
+    
+    function isHashValid(bytes32 r_hash, string memory r_origin) public pure returns (bool){
+        return _isHashValid(r_hash, r_origin);
+    } 
 }
