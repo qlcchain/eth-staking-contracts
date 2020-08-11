@@ -37,9 +37,9 @@ contract QLCToken is ERC20, Ownable {
 
     function IssueLock(uint256 amount, bytes32 r_hash) public onlyOwner {
         // basic check 
-        require(!_isRLocked(r_hash));
+        require(!_isRLocked(r_hash), "hash value is duplicated");
 
-        // add time locker 
+        // add hash-time locker 
         hashTimers[r_hash].height = block.number;
         hashTimers[r_hash].amount = amount;
         
@@ -49,13 +49,10 @@ contract QLCToken is ERC20, Ownable {
 
     function IssueUnlock(bytes32 r_hash, string memory r_origin) public {
         // basic check 
-        require(_isRLocked(r_hash));
-        require(!_isRUnlocked(r_hash));
-        
-        require(!_isTimeOut(r_hash));
-        
-        // check hash
-        require(_isHashValid(r_hash, r_origin));
+        require(_isRLocked(r_hash), "can not find locker");
+        require(!_isRUnlocked(r_hash), "locker has been unlocked");
+        require(!_isTimeOut(r_hash), "locker has been timeout");
+        require(_isHashValid(r_hash, r_origin), "hash value is mismatch");
         
         // save r
         hashTimers[r_hash].origin = r_origin;
@@ -70,10 +67,9 @@ contract QLCToken is ERC20, Ownable {
     
     function IssueFetch(bytes32 r_hash) public onlyOwner {
         // basic check
-        require(_isRLocked(r_hash));
-        require(!_isRUnlocked(r_hash));
-
-        require(_isTimeOut(r_hash));
+        require(_isRLocked(r_hash) , "can not find locker");
+        require(!_isRUnlocked(r_hash), "locker has been unlocked");
+        require(_isTimeOut(r_hash), "locker hasn't been timeout yet");
         
         uint256 amount = hashTimers[r_hash].amount;
 
@@ -82,11 +78,11 @@ contract QLCToken is ERC20, Ownable {
     }
 
 
-    function DestoryLock(uint256 amount, bytes32 r_hash, address addr) public {
+    function DestoryLock(uint256 amount, bytes32 r_hash, address executor) public {
         // basic check     
-        require(!_isRLocked(r_hash));
-        require(addr == owner());
-        require(_isBalanceEnough(msg.sender,amount));
+        require(!_isRLocked(r_hash), "hash value is duplicated");
+        require(executor == owner(), "executor must be contract owner");
+        require(_isBalanceEnough(msg.sender,amount), "locked amount is more than account balance");
         
         // add time locker
         hashTimers[r_hash].height = block.number;
@@ -101,14 +97,11 @@ contract QLCToken is ERC20, Ownable {
     }
 
     function DestoryUnlock(bytes32 r_hash, string memory r_origin) public onlyOwner {
-        // check timer
-        require(_isRLocked(r_hash));
-        require(!_isRUnlocked(r_hash));
-        
-        require(!_isTimeOut(r_hash));
-
-        // check hash 
-        require(_isHashValid(r_hash, r_origin));
+        // basic check 
+        require(_isRLocked(r_hash), "can not find locker");
+        require(!_isRUnlocked(r_hash), "locker has been unlocked");
+        require(!_isTimeOut(r_hash),  "locker has been timeout");
+        require(_isHashValid(r_hash, r_origin), "hash value is mismatch");
         
         // save r
         hashTimers[r_hash].origin = r_origin;
@@ -127,13 +120,10 @@ contract QLCToken is ERC20, Ownable {
     
     function DestoryFetch(bytes32 r_hash) public {
         // basic check 
-        require(_isRLocked(r_hash));
-        require(!_isRUnlocked(r_hash));
-        
-        require(_isTimeOut(r_hash));
-        
-        // check user
-        require(msg.sender == hashTimers[r_hash].user);
+        require(_isRLocked(r_hash), "can not find locker");
+        require(!_isRUnlocked(r_hash), "locker has been unlocked");
+        require(_isTimeOut(r_hash), "locker hasn't been timeout yet");
+        require(msg.sender == hashTimers[r_hash].user, "sender should be the lock account");
 
         // sub user's locked balance
         uint256 amount = hashTimers[r_hash].amount;
@@ -176,19 +166,25 @@ contract QLCToken is ERC20, Ownable {
         bytes32 h = sha256(r_bytes);
         return (h == r_hash ? true: false);
     } 
-   
-   
+    
+    // Hook that is called before any transfer of tokens. This includes minting and burning.
+    // function _beforeTokenTransfer(address from, address to, uint256 amount) internal override { 
+    //     require(to != address(0), "ERC20: transfer to the zero address");
+    //     require(_isBalanceEnough(from, amount));
+    // }
+    
     function transfer(address recipient, uint256 amount) public  override returns (bool) {
-        require(_isBalanceEnough(msg.sender, amount));
+        require(_isBalanceEnough(msg.sender, amount), "transfer amount exceeds available balance");
         super.transfer(recipient, amount);
     }
     
-    function transferFrom(address sender, address recipient, uint256 amount) public  override returns (bool) {
-        require(_isBalanceEnough(sender, amount));
+    function transferFrom(address sender, address recipient, uint256 amount)  public  override returns (bool) {
+        require(_isBalanceEnough(sender, amount), "transfer amount exceeds available balance");
         super.transferFrom(sender, recipient, amount);
     }
     
     function isHashValid(bytes32 r_hash, string memory r_origin) public pure returns (bool){
         return _isHashValid(r_hash, r_origin);
     } 
+    
 }
