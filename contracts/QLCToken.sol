@@ -19,18 +19,11 @@ contract QLCToken is ERC20, Ownable {
     }
     
     mapping (bytes32 => HashTimer) public hashTimers; 
-    mapping (address => uint256)  public lockBalanceOf; 
+    mapping (address => uint256)  public lockedBalanceOf; 
 
-    event IssueTokenLock(bytes32 r_hash, uint256 amount);
-    event IssueTokenUnlock(bytes32 r_hash, string r_origin);
-    event IssueTokenFetch(bytes32 r_hash,  uint256 amount);
-    
-    event DestoryTokenLock(bytes32 r_hash, address addr,  uint256 amount);
-    event DestoryTokenUnlock(bytes32 r_hash, string r_origin, address addr, uint256 amount);
-    event DestoryTokenFetch(bytes32 r_hash, address addr, uint256 amount);
+    event LockedState(bytes32 r_hash, string state, uint256 amount, address user, string r_origin);
     
     uint256  interval = 10 ;  
-    
 
     constructor() public ERC20("QToken", "qlc") {
         _setupDecimals(8);
@@ -45,7 +38,7 @@ contract QLCToken is ERC20, Ownable {
         hashTimers[r_hash].height = block.number;
         hashTimers[r_hash].amount = amount;
         
-        emit IssueTokenLock(r_hash, amount);
+        emit LockedState(r_hash, "IssueLock", amount, address(0), "");
         _setRLocked(r_hash);
     }
 
@@ -63,7 +56,7 @@ contract QLCToken is ERC20, Ownable {
         uint256 amount = hashTimers[r_hash].amount;
         _mint(msg.sender,amount);   
 
-        emit IssueTokenUnlock(r_hash, r_origin);
+        emit LockedState(r_hash, "IssueUnlock", amount, msg.sender, r_origin);
         _setRUnlocked(r_hash);
     }
     
@@ -74,8 +67,9 @@ contract QLCToken is ERC20, Ownable {
         require(_isTimeOut(r_hash), "locker hasn't been timeout yet");
         
         uint256 amount = hashTimers[r_hash].amount;
-
-        emit IssueTokenFetch(r_hash, amount);
+        emit LockedState(r_hash, "IssueFetch", amount, address(0), "");
+        
+        hashTimers[r_hash].amount = 0;
         _setRUnlocked(r_hash);
     }
 
@@ -92,9 +86,9 @@ contract QLCToken is ERC20, Ownable {
         hashTimers[r_hash].user   = msg.sender;
         
         // add user's locked balance
-        lockBalanceOf[msg.sender] = lockBalanceOf[msg.sender].add(amount);
+        lockedBalanceOf[msg.sender] = lockedBalanceOf[msg.sender].add(amount);
         
-        emit DestoryTokenLock(r_hash, msg.sender, amount);
+        emit LockedState(r_hash, "DestoryLock", amount, msg.sender, "");
         _setRLocked(r_hash);
     }
 
@@ -114,9 +108,9 @@ contract QLCToken is ERC20, Ownable {
         _burn(user, amount);
         
         // sub user's locked balance
-        lockBalanceOf[user] = lockBalanceOf[user].sub(amount);
+        lockedBalanceOf[user] = lockedBalanceOf[user].sub(amount);
 
-        emit DestoryTokenUnlock(r_hash,r_origin, user, amount);
+        emit LockedState(r_hash, "DestoryUnlock", amount, user, r_origin );
         _setRUnlocked(r_hash);
     }
     
@@ -129,9 +123,9 @@ contract QLCToken is ERC20, Ownable {
 
         // sub user's locked balance
         uint256 amount = hashTimers[r_hash].amount;
-        lockBalanceOf[msg.sender] = lockBalanceOf[msg.sender].sub(amount);
+        lockedBalanceOf[msg.sender] = lockedBalanceOf[msg.sender].sub(amount);
         
-        emit  DestoryTokenFetch(r_hash, msg.sender, amount);        
+        emit  LockedState(r_hash, "DestoryFetch", amount, msg.sender, "" );        
         _setRUnlocked(r_hash);
     }
     
@@ -142,9 +136,9 @@ contract QLCToken is ERC20, Ownable {
     }
     
     function _isBalanceEnough(address addr, uint256 amount) private view returns (bool){
-        uint256 lockBalance = lockBalanceOf[addr];
+        uint256 lockedBalance = lockedBalanceOf[addr];
         uint256 totalBalance = balanceOf(addr);
-        return (totalBalance.sub(lockBalance) > amount ? true: false); 
+        return (totalBalance.sub(lockedBalance) > amount ? true: false); 
     }
     
     function _isRLocked(bytes32 r_hash) private view returns (bool){
@@ -188,5 +182,5 @@ contract QLCToken is ERC20, Ownable {
     function isHashValid(bytes32 r_hash, string memory r_origin) public pure returns (bool){
         return _isHashValid(r_hash, r_origin);
     } 
-    
+
 }
