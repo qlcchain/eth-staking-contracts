@@ -1,6 +1,6 @@
 'use strict';
 
-var HDWalletProvider = require("truffle-hdwallet-provider")
+var HDWalletProvider = require("@truffle/hdwallet-provider")
 
 const isCoverage = process.env.COVERAGE === 'true'
 
