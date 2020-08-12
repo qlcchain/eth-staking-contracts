@@ -35,6 +35,7 @@
   "devDependencies": {
     "@openzeppelin/cli": "^2.8.2",
     "@truffle/hdwallet-provider": "^1.0.42",
+    "chai": "^4.2.0",
     "eth-gas-reporter": "^0.2.17",
     "ganache-cli": "^6.10.1",
     "husky": "^4.2.5",
