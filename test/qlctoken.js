@@ -1,0 +1,1 @@
+const QLCToken = artifacts.require("QLCToken");

@@ -1,5 +1,5 @@
-const QLCToken = artifacts.require("QLCToken");
+const Migrations = artifacts.require("Migrations");
 
-module.exports = function (deployer) {
-  deployer.deploy(QLCToken);
+module.exports = function(deployer) {
+  deployer.deploy(Migrations);
 };
