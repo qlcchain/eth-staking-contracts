@@ -73,8 +73,8 @@ contract QLCToken is ERC20, Ownable {
     }
 
     function destoryLock(
-        uint256 amount,
         bytes32 rHash,
+        uint256 amount,
         address executor
     ) public {
         // basic check
@@ -188,7 +188,6 @@ contract QLCToken is ERC20, Ownable {
         );
     }
 
-
     function lockedBalanceOf(address addr) public view returns (uint256) {
         return _lockedBalanceOf[addr];
     }
@@ -210,4 +209,5 @@ contract QLCToken is ERC20, Ownable {
     function isHashValid(bytes32 rHash, bytes32 rOrigin) public pure returns (bool) {
         return _isHashValid(rHash, rOrigin);
     }
+
 }
