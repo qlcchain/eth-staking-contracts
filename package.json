@@ -12,7 +12,7 @@
     "staking"
   ],
   "scripts": {
-    "test": "$(yarn bin truffle) test --migrations_directory ./migrations/empty",
+    "test": "$(yarn bin truffle) test",
     "coverage": "COVERAGE=true $(yarn bin truffle) run coverage --migrations_directory ./migrations/empty",
     "compile": "$(yarn bin truffle) compile",
     "deploy": "$(yarn bin truffle) migrate --network rinkeby",
