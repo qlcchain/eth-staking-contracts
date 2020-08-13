@@ -166,8 +166,22 @@ contract QLCToken is ERC20, Ownable {
         return (h == rHash ? true : false);
     }
 
-    function hashTimers(bytes32 rHash) public view returns (bytes32,uint256,uint256,address) {
-        return (_hashTimers[rHash].origin, _hashTimers[rHash].height, _hashTimers[rHash].amount, _hashTimers[rHash].user);
+    function hashTimers(bytes32 rHash)
+        public
+        view
+        returns (
+            bytes32,
+            uint256,
+            uint256,
+            address
+        )
+    {
+        return (
+            _hashTimers[rHash].origin,
+            _hashTimers[rHash].height,
+            _hashTimers[rHash].amount,
+            _hashTimers[rHash].user
+        );
     }
 
     function lockedBalanceOf(address addr) public view returns (uint256) {
