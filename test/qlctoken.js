@@ -9,14 +9,23 @@ contract('QLCToken', async accounts => {
       });
     });
 
-
     it("issueLock", async () => {
         let instance = await QLCToken.deployed();
         let hash = "0x77f7ea6da86c94ee8b070eacf6dc9fec37cbe1f27ed0a5225aa81cede6eaba93"
-        await instance.issueLock.call(hash,1000000)
+        let amount = 1000000
+        await instance.issueLock(hash, amount)
 
-        // let a = await instance.hashTimers.call(hash)
-        // console.log(a.toNumber())
+        let timer = await instance.hashTimer(hash)
+
+        assert.equal(timer[2], amount, "lock amount");
+        assert.equal(timer[4], true, "locked state");
+        assert.equal(timer[5], false, "unlocked state");
+   
+        // chai.assert.isRejected(await instance.issueLock(hash, 1000000) , 'Amount is not valid number');
+        // assert.isRejected(await instance.issueLock(hash, 1000000) )
+        // await instance.issueLock(hash, 1000000) 
+
+        console.log(timer)
 
     });
 
@@ -29,17 +38,17 @@ contract('QLCToken', async accounts => {
     //     let instance = await QLCToken.deployed();
     //     let meta = instance;
     
-    //     let balance = await meta.getBalance.call(account_one);
+    //     let balance = await meta.balanceOf.call(account_one);
     //     let account_one_starting_balance = balance.toNumber();
     
-    //     balance = await meta.getBalance.call(account_two);
+    //     balance = await meta.balanceOf.call(account_two);
     //     let account_two_starting_balance = balance.toNumber();
     //     await meta.transfer(account_two, amount);
     
-    //     balance = await meta.getBalance.call(account_one);
+    //     balance = await meta.balanceOf.call(account_one);
     //     let account_one_ending_balance = balance.toNumber();
     
-    //     balance = await meta.getBalance.call(account_two);
+    //     balance = await meta.balanceOf.call(account_two);
     //     let account_two_ending_balance = balance.toNumber();
 
     //     console.log(account_one_starting_balance)
@@ -48,27 +57,5 @@ contract('QLCToken', async accounts => {
     //     console.log(account_two_ending_balance)
     //     console.log(await meta.balanceOf.call(account_one))
     //  });
-  
 });
 
-// contract('QLCToken', function(accounts) {
-//     it("should call a function that depends on a linked library", () => {
-//         let meta;
-//         let hash = "0x77f7ea6da86c94ee8b070eacf6dc9fec37cbe1f27ed0a5225aa81cede6eaba93"
-    
-//         return QLCToken.deployed()
-//           .then(instance => {
-//             meta = instance;
-//             return meta.issueLock.call( hash,1000000);
-//           })
-//           .then(() => {
-//              return  meta.balanceOf.call(accounts[0]);
-//         }).then((balance) =>{
-//             console.log(balance.toNumber())
-//         }).then(()=>{
-//            return meta.hashTimers.call(hash);
-//         }).then((balance) =>{
-//             console.log(balance.toNumber())
-//         });
-//     }); 
-// });
