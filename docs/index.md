@@ -99,7 +99,7 @@ Emits a {LockedState} event.
 Parameters:
 - `rHash` is the hash of locker
 
-### `hashTimer(bytes32 rHash) → bytes32, uint256, address, uint256, uint256, bool, bool, bool` (public)
+### `hashTimer(bytes32 rHash) → bytes32, uint256, address, uint256, uint256, bool` (public)
 
 
 
@@ -113,8 +113,6 @@ Returns:
 - account with locked token 
 - locked block height
 - unlocked block height
-- locked state, true or false
-- unlocked state, true or false
 - `true` is issue phase, `false` is destory phase
 
 ### `lockedBalanceOf(address addr) → uint256` (public)

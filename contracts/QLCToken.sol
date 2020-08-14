@@ -269,8 +269,6 @@ contract QLCToken is ERC20, Ownable {
      * - account with locked token 
      * - locked block height
      * - unlocked block height
-     * - locked state, true or false
-     * - unlocked state, true or false
      * - `true` is issue phase, `false` is destory phase
      */
     function hashTimer(bytes32 rHash)
@@ -282,8 +280,6 @@ contract QLCToken is ERC20, Ownable {
             address,
             uint256,
             uint256,
-            bool,
-            bool,
             bool
         )
     {
@@ -293,8 +289,6 @@ contract QLCToken is ERC20, Ownable {
             _hashTimers[rHash].user,
             _hashTimers[rHash].lockHeight,
             _hashTimers[rHash].unlockHeight,
-            _hashTimers[rHash].isLocked,
-            _hashTimers[rHash].isUnlocked,
             _hashTimers[rHash].isIssue
         );
     }
