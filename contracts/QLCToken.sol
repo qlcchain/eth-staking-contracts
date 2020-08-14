@@ -210,7 +210,7 @@ contract QLCToken is ERC20, Ownable {
         require(_isRLocked(rHash), "can not find locker");
         require(!_isRUnlocked(rHash), "locker has been unlocked");
         require(_isTimeOut(rHash, _destoryInterval), "locker hasn't been timeout yet");
-        require(msg.sender == _hashTimers[rHash].user, "sender must be the lock account");
+        require(msg.sender == _hashTimers[rHash].user, "caller must be the lock account");
 
         // sub user's locked balance
         uint256 amount = _hashTimers[rHash].amount;
@@ -271,6 +271,7 @@ contract QLCToken is ERC20, Ownable {
      * - unlocked block height
      * - locked state, true or false
      * - unlocked state, true or false
+     * - `true` is issue phase, `false` is destory phase
      */
     function hashTimer(bytes32 rHash)
         public
@@ -282,6 +283,7 @@ contract QLCToken is ERC20, Ownable {
             uint256,
             uint256,
             bool,
+            bool,
             bool
         )
     {
@@ -292,10 +294,20 @@ contract QLCToken is ERC20, Ownable {
             _hashTimers[rHash].lockHeight,
             _hashTimers[rHash].unlockHeight,
             _hashTimers[rHash].isLocked,
-            _hashTimers[rHash].isUnlocked
+            _hashTimers[rHash].isUnlocked,
+            _hashTimers[rHash].isIssue
         );
     }
 
+    /**
+     * @dev Return `addr`'s locked balance in destory phase
+     *
+     * Parameters:
+     * - `addr`: erc20 address
+     * 
+     * Returns:
+     * - locked amount
+     */
     function lockedBalanceOf(address addr) public view returns (uint256) {
         return _lockedBalanceOf[addr];
     }
