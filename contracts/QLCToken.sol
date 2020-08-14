@@ -6,21 +6,27 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+
+/**
+ * @dev QLC contract.
+ */
 contract QLCToken is ERC20, Ownable {
     using SafeMath for uint256;
 
     struct HashTimer {
         bytes32 origin; // hash original
-        uint256 height; // lock height
         uint256 amount; // lock amount
-        address user; // lock address
+        address user;   // lock address
+        uint256 lockHeight; 
+        uint256 unlockHeight;
         bool isLocked;
         bool isUnlocked;
     }
 
     mapping(bytes32 => HashTimer) private _hashTimers;
-    mapping(address => uint256) private _lockedBalanceOf;
-    uint256 private _interval = 10;
+    mapping(address => uint256)   private _lockedBalanceOf;
+    uint256 private _issueInterval   = 5;
+    uint256 private _destoryInterval = 10;
 
     event LockedState(bytes32 rHash, string state, uint256 amount, address user, bytes32 rOrigin);
 
@@ -29,12 +35,15 @@ contract QLCToken is ERC20, Ownable {
         _mint(msg.sender, 0);
     }
 
+    /**
+     * @dev Issue Lock
+     */
     function issueLock(bytes32 rHash, uint256 amount) public onlyOwner {
         // basic check
         require(!_isRLocked(rHash), "hash value is duplicated");
 
         // add hash-time locker
-        _hashTimers[rHash].height = block.number;
+        _hashTimers[rHash].lockHeight = block.number;
         _hashTimers[rHash].amount = amount;
 
         emit LockedState(rHash, "issueLock", amount, address(0), "");
@@ -45,7 +54,7 @@ contract QLCToken is ERC20, Ownable {
         // basic check
         require(_isRLocked(rHash), "can not find locker");
         require(!_isRUnlocked(rHash), "locker has been unlocked");
-        require(!_isTimeOut(rHash), "locker has been timeout");
+        require(!_isTimeOut(rHash, _issueInterval ), "locker has been timeout");
         require(_isHashValid(rHash, rOrigin), "hash value is mismatch");
 
         // save r
@@ -63,7 +72,7 @@ contract QLCToken is ERC20, Ownable {
         // basic check
         require(_isRLocked(rHash), "can not find locker");
         require(!_isRUnlocked(rHash), "locker has been unlocked");
-        require(_isTimeOut(rHash), "locker hasn't been timeout yet");
+        require(_isTimeOut(rHash, _issueInterval), "locker hasn't been timeout yet");
 
         uint256 amount = _hashTimers[rHash].amount;
         emit LockedState(rHash, "issueFetch", amount, address(0), "");
@@ -83,7 +92,7 @@ contract QLCToken is ERC20, Ownable {
         require(_isBalanceEnough(msg.sender, amount), "available balance is not enough");
 
         // add time locker
-        _hashTimers[rHash].height = block.number;
+        _hashTimers[rHash].lockHeight = block.number;
         _hashTimers[rHash].amount = amount;
         _hashTimers[rHash].user = msg.sender;
 
@@ -98,7 +107,7 @@ contract QLCToken is ERC20, Ownable {
         // basic check
         require(_isRLocked(rHash), "can not find locker");
         require(!_isRUnlocked(rHash), "locker has been unlocked");
-        require(!_isTimeOut(rHash), "locker has been timeout");
+        require(!_isTimeOut(rHash, _destoryInterval), "locker has been timeout");
         require(_isHashValid(rHash, rOrigin), "hash value is mismatch");
 
         // save r
@@ -120,7 +129,7 @@ contract QLCToken is ERC20, Ownable {
         // basic check
         require(_isRLocked(rHash), "can not find locker");
         require(!_isRUnlocked(rHash), "locker has been unlocked");
-        require(_isTimeOut(rHash), "locker hasn't been timeout yet");
+        require(_isTimeOut(rHash, _destoryInterval), "locker hasn't been timeout yet");
         require(msg.sender == _hashTimers[rHash].user, "sender must be the lock account");
 
         // sub user's locked balance
@@ -131,10 +140,10 @@ contract QLCToken is ERC20, Ownable {
         _setRUnlocked(rHash);
     }
 
-    function _isTimeOut(bytes32 rHash) private view returns (bool) {
+    function _isTimeOut(bytes32 rHash, uint256 interval) private view returns (bool) {
         uint256 currentHeight = block.number;
-        uint256 originHeight = _hashTimers[rHash].height;
-        return (currentHeight.sub(originHeight) > _interval ? true : false);
+        uint256 originHeight = _hashTimers[rHash].lockHeight;
+        return (currentHeight.sub(originHeight) > interval ? true : false);
     }
 
     function _isBalanceEnough(address addr, uint256 amount) private view returns (bool) {
@@ -157,6 +166,7 @@ contract QLCToken is ERC20, Ownable {
 
     function _setRUnlocked(bytes32 rHash) private {
         _hashTimers[rHash].isUnlocked = true;
+        _hashTimers[rHash].unlockHeight = block.number;
     }
 
     function _isHashValid(bytes32 rHash, bytes32 rOrigin) private pure returns (bool) {
@@ -172,17 +182,19 @@ contract QLCToken is ERC20, Ownable {
         returns (
             bytes32,
             uint256,
-            uint256,
             address,
+            uint256,
+            uint256,
             bool,
             bool
         )
     {
         return (
             _hashTimers[rHash].origin,
-            _hashTimers[rHash].height,
             _hashTimers[rHash].amount,
             _hashTimers[rHash].user,
+            _hashTimers[rHash].lockHeight,
+            _hashTimers[rHash].unlockHeight,
             _hashTimers[rHash].isLocked,
             _hashTimers[rHash].isUnlocked
         );

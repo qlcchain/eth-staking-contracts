@@ -26,9 +26,9 @@ contract('QLCToken', async accounts => {
         await instance.issueLock(hash, amount)
 
         let timer = await instance.hashTimer(hash)
-        assert.equal(timer[2], amount, "lock amount");
-        assert.equal(timer[4], true, "locked state");
-        assert.equal(timer[5], false, "unlocked state");
+        assert.equal(timer[1], amount, "lock amount");
+        assert.equal(timer[5], true, "locked state");
+        assert.equal(timer[6], false, "unlocked state");
 
         await chai.assert.isRejected(instance.issueLock(hash, 1000000) , 'hash value is duplicated');
         await chai.assert.isRejected(instance.issueLock(hash, 1000000, {from: accounts[1]}) , 'Ownable: caller is not the owner');
@@ -63,9 +63,9 @@ contract('QLCToken', async accounts => {
       assert.equal(await instance.balanceOf(accounts[2]), amount, "account 1 amount not is incorrect");
       
       let timer = await instance.hashTimer(rHash)
-      assert.equal(timer[2], amount, "lock amount");
-      assert.equal(timer[4], true, "locked state");
-      assert.equal(timer[5], true, "unlocked state"); 
+      assert.equal(timer[1], amount, "lock amount");
+      assert.equal(timer[5], true, "locked state");
+      assert.equal(timer[6], true, "unlocked state"); 
 
       await chai.assert.isRejected(instance.issueUnlock(rHash, rOrigin) , 'locker has been unlocked')
   });
@@ -96,10 +96,10 @@ contract('QLCToken', async accounts => {
     await instance.destoryLock(hash, amount, accounts[0], {from: accounts[2]})
 
     let timer = await instance.hashTimer(hash)
-    assert.equal(timer[2], amount, "lock amount");
-    assert.equal(timer[3], accounts[2], "lock address"); 
-    assert.equal(timer[4], true, "locked state");
-    assert.equal(timer[5], false, "unlocked state");
+    assert.equal(timer[1], amount, "lock amount");
+    assert.equal(timer[2], accounts[2], "lock address"); 
+    assert.equal(timer[5], true, "locked state");
+    assert.equal(timer[6], false, "unlocked state");
 
     await chai.assert.isRejected(instance.destoryLock(hash, amount, accounts[0]) , 'hash value is duplicated')
   })
