@@ -12,22 +12,22 @@
     "staking"
   ],
   "scripts": {
-    "test": "$(yarn bin truffle) test",
-    "coverage": "COVERAGE=true $(yarn bin truffle) run coverage --migrations_directory ./migrations/empty",
-    "compile": "$(yarn bin truffle) compile",
-    "deploy": "$(yarn bin truffle) migrate --network rinkeby",
-    "start": "$(yarn bin ganache-cli) -l 10000038 -i 1234 -e 100000 -a 10 -u 0 -g 1000000000 --allowUnlimitedContractSize -m \"$HDWALLET_MNEMONIC\"",
-    "session": "$(yarn bin openzeppelin) session --from $ADMIN_ADDRESS --network local --expires 7200 --timeout 3600",
-    "session-kovan": "$(yarn bin openzeppelin) session --from $ADMIN_ADDRESS --network kovan --expires 7200 --timeout 3600",
-    "session-rinkeby": "$(yarn bin openzeppelin) session --from $ADMIN_ADDRESS --network rinkeby --expires 7200 --timeout 3600",
-    "session-mainnet": "$(yarn bin openzeppelin) session --from $ADMIN_ADDRESS --network mainnet --expires 7200 --timeout 3600",
-    "push": "$(yarn binopenzeppelin) push",
-    "version": "$(yarn bin truffle) version",
-    "extract-abis": "$(yarn bin truffle-extract) -o .abis",
-    "docs": "$(yarn bin solidity-docgen) -o docs -i contracts -s single",
+    "test": "npx truffle test",
+    "coverage": "COVERAGE=true npx truffle run coverage --migrations_directory ./migrations/empty",
+    "compile": "npx truffle compile",
+    "deploy": "npx truffle migrate --network rinkeby",
+    "start": "npx ganache-cli -l 10000038 -i 1234 -e 100000 -a 10 -u 0 -g 1000000000 --allowUnlimitedContractSize -m \"$HDWALLET_MNEMONIC\"",
+    "session": "npx openzeppelin session --from $ADMIN_ADDRESS --network local --expires 7200 --timeout 3600",
+    "session-kovan": "npx openzeppelin session --from $ADMIN_ADDRESS --network kovan --expires 7200 --timeout 3600",
+    "session-rinkeby": "npx openzeppelin session --from $ADMIN_ADDRESS --network rinkeby --expires 7200 --timeout 3600",
+    "session-mainnet": "npx openzeppelin session --from $ADMIN_ADDRESS --network mainnet --expires 7200 --timeout 3600",
+    "push": "npx openzeppelin push",
+    "version": "npx truffle version",
+    "extract-abis": "npx truffle-extract -o .abis",
+    "docs": "npx solidity-docgen -o docs -i contracts -s single",
     "postpublish": "PACKAGE_VERSION=$(./scripts/package-version.sh) && git tag -ae v$PACKAGE_VERSION && git push --tags",
-    "solhint": "$(yarn bin solhint) -f table contracts/**/*.sol",
-    "prettier:solidity": "$(yarn bin prettier) --write contracts/**/*.sol"
+    "solhint": "npx solhint -f table contracts/**/*.sol",
+    "prettier:solidity": "npx prettier --write contracts/**/*.sol"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.1.0",
@@ -51,13 +51,12 @@
     "solidity-coverage": "^0.7.9",
     "solidity-docgen": "^0.5.4",
     "truffle": "5.1.39",
-    "truffle-extract": "pooltogether/truffle-extract#2a57b6e63a8a2057aad0fec63ba255cd46e9ff1d",
-    "web3": "^1.2.11"
+    "truffle-extract": "pooltogether/truffle-extract#2a57b6e63a8a2057aad0fec63ba255cd46e9ff1d"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn run prettier:solidity",
-      "pre-push": "yarn run prettier:solidity"
+      "pre-commit": "npm run prettier:solidity",
+      "pre-push": "npm run prettier:solidity"
     }
   }
 }
