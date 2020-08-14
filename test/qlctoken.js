@@ -11,7 +11,6 @@ contract('QLCToken', async accounts => {
       });
     });
 
-
     it("issueLock", async () => {
       let hash = "0xc65db7f11f4f8e5b3a413c37987727d3cb30a0cf43c3bd2eeb7bb316d0bdfb64"
       let amount = 1000000

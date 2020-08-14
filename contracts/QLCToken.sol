@@ -36,10 +36,18 @@ contract QLCToken is ERC20, Ownable {
     }
 
     /**
-     * @dev Issue Lock
+     * @dev Issue `amount` token and locked by `rHash`
+     * Only callable by the Owner.
+     * Emits a {LockedState} event.
+     *
+     * Parameters:
+     * - `rHash` is the hash of locker, cannot be the zero.
+     * - `amount` should more than zero.
      */
     function issueLock(bytes32 rHash, uint256 amount) public onlyOwner {
         // basic check
+        require(rHash != 0x0, "rHash can not be zero");
+        require(amount > 0, "amount should more than zero");
         require(!_isRLocked(rHash), "hash value is duplicated");
 
         // add hash-time locker
@@ -50,6 +58,14 @@ contract QLCToken is ERC20, Ownable {
         _setRLocked(rHash);
     }
 
+    /**
+     * @dev Unlock `rHash` locked token by origin text `rOrigin`
+     * Emits a {LockedState} event.
+     *
+     * Parameters:
+     * - `rHash` is the hash of locker
+     * - `rOrigin` is the origin text of locker
+     */
     function issueUnlock(bytes32 rHash, bytes32 rOrigin) public {
         // basic check
         require(_isRLocked(rHash), "can not find locker");
@@ -87,6 +103,8 @@ contract QLCToken is ERC20, Ownable {
         address executor
     ) public {
         // basic check
+        require(rHash != 0x0, "rHash can not be zero");
+        require(amount > 0, "amount should more than zero");
         require(!_isRLocked(rHash), "hash value is duplicated");
         require(executor == owner(), "executor must be contract owner");
         require(_isBalanceEnough(msg.sender, amount), "available balance is not enough");
@@ -204,11 +222,34 @@ contract QLCToken is ERC20, Ownable {
         return _lockedBalanceOf[addr];
     }
 
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     *
+     * Parameters:
+     * - `recipient` cannot be the zero address.
+     * -  the caller must have a balance of at least `amount`.
+     */
     function transfer(address recipient, uint256 amount) public override returns (bool) {
         require(_isBalanceEnough(msg.sender, amount), "available balance is not enough");
         super.transfer(recipient, amount);
     }
 
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     * Parameters:
+     * - `sender` and `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `amount`.
+     * -  the caller must have allowance for ``sender``'s tokens of at least `amount`.
+     */
     function transferFrom(
         address sender,
         address recipient,
