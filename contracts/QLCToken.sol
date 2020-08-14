@@ -8,27 +8,40 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 
 /**
- * @dev QLC contract.
+ * @dev QLCToken contract realizes cross-chain with Nep5 QLC
  */
 contract QLCToken is ERC20, Ownable {
     using SafeMath for uint256;
 
     struct HashTimer {
-        bytes32 origin; // hash original
-        uint256 amount; // lock amount
-        address user;   // lock address
+        bytes32 origin; 
+        uint256 amount;
+        address user;  
         uint256 lockHeight; 
         uint256 unlockHeight;
         bool isLocked;
         bool isUnlocked;
+        bool isIssue;
     }
 
     mapping(bytes32 => HashTimer) private _hashTimers;
     mapping(address => uint256)   private _lockedBalanceOf;
     uint256 private _issueInterval   = 5;
     uint256 private _destoryInterval = 10;
+    uint256 private _minAmount = 1;
 
-    event LockedState(bytes32 rHash, string state, uint256 amount, address user, bytes32 rOrigin);
+
+    /**
+     * @dev Emitted locker state changed
+     *
+     * Parameters:
+     * - `rHash`: index, the hash of locker
+     * - `state`: locker state
+     * - `amount`: locked amount
+     * - `user`: account with locked token 
+     * - `rOrigin`: the origin text of locker
+     */
+    event LockedState(bytes32 indexed rHash, string state, uint256 amount, address user, bytes32 rOrigin);
 
     constructor() public ERC20("QToken", "qlc") {
         _setupDecimals(8);
@@ -41,25 +54,28 @@ contract QLCToken is ERC20, Ownable {
      * Emits a {LockedState} event.
      *
      * Parameters:
-     * - `rHash` is the hash of locker, cannot be the zero.
-     * - `amount` should more than zero.
+     * - `rHash` is the hash of locker, cannot be zero and duplicated 
+     * - `amount` should not less than `_minAmount`
      */
     function issueLock(bytes32 rHash, uint256 amount) public onlyOwner {
         // basic check
         require(rHash != 0x0, "rHash can not be zero");
-        require(amount > 0, "amount should more than zero");
+        require(amount >= _minAmount, "amount should not less than zero");
         require(!_isRLocked(rHash), "hash value is duplicated");
 
         // add hash-time locker
         _hashTimers[rHash].lockHeight = block.number;
         _hashTimers[rHash].amount = amount;
+        _hashTimers[rHash].isIssue = true;
 
         emit LockedState(rHash, "issueLock", amount, address(0), "");
         _setRLocked(rHash);
     }
 
     /**
-     * @dev Unlock `rHash` locked token by origin text `rOrigin`
+     * @dev caller provide locker origin text `rOrigin` to unlock token and release to his account
+     * `issueUnlock` must be executed after `issueLock` and the interval must less then `_issueInterval`
+     *
      * Emits a {LockedState} event.
      *
      * Parameters:
@@ -75,6 +91,7 @@ contract QLCToken is ERC20, Ownable {
 
         // save r
         _hashTimers[rHash].origin = rOrigin;
+        _hashTimers[rHash].user = msg.sender;
 
         // unlock token to user
         uint256 amount = _hashTimers[rHash].amount;
@@ -84,6 +101,17 @@ contract QLCToken is ERC20, Ownable {
         _setRUnlocked(rHash);
     }
 
+
+    /**
+     * @dev `issueFetch` must be executed after `issueLock` and the interval must more then `_issueInterval`
+     * destory the token locked by `rHash`
+     * Only callable by the Owner. 
+     *
+     * Emits a {LockedState} event.
+     *
+     * Parameters:
+     * - `rHash` is the hash of locker
+     */
     function issueFetch(bytes32 rHash) public onlyOwner {
         // basic check
         require(_isRLocked(rHash), "can not find locker");
@@ -97,6 +125,17 @@ contract QLCToken is ERC20, Ownable {
         _setRUnlocked(rHash);
     }
 
+
+    /**
+     * @dev lock caller's `amount` token by `rHash`
+     *
+     * Emits a {LockedState} event.
+     *
+     * Parameters:
+     * - `rHash` is the hash of locker, cannot be zero and duplicated 
+     * - `amount` should more than zero.
+     * - `executor` should be owner's address
+     */
     function destoryLock(
         bytes32 rHash,
         uint256 amount,
@@ -113,6 +152,8 @@ contract QLCToken is ERC20, Ownable {
         _hashTimers[rHash].lockHeight = block.number;
         _hashTimers[rHash].amount = amount;
         _hashTimers[rHash].user = msg.sender;
+        _hashTimers[rHash].isIssue = false;
+
 
         // add user's locked balance
         _lockedBalanceOf[msg.sender] = _lockedBalanceOf[msg.sender].add(amount);
@@ -121,6 +162,18 @@ contract QLCToken is ERC20, Ownable {
         _setRLocked(rHash);
     }
 
+
+    /**
+     * @dev Destory `rHash` locked token by origin text `rOrigin`
+     * `destoryUnlock` must be executed after `destoryLock` and the interval must less then `_destoryInterval`
+     * Only callable by the Owner. 
+     *
+     * Emits a {LockedState} event.
+     *
+     * Parameters:
+     * - `rHash` is the hash of locker
+     * - `rOrigin` is the origin text of locker
+     */
     function destoryUnlock(bytes32 rHash, bytes32 rOrigin) public onlyOwner {
         // basic check
         require(_isRLocked(rHash), "can not find locker");
@@ -143,6 +196,15 @@ contract QLCToken is ERC20, Ownable {
         _setRUnlocked(rHash);
     }
 
+    /**
+     * @dev `destoryFetch` must be executed after `destoryLock` and the interval must more then `_destoryInterval`
+     * unlock token and return back to caller
+     *
+     * Emits a {LockedState} event.
+     *
+     * Parameters:
+     * - `rHash` is the hash of locker
+     */
     function destoryFetch(bytes32 rHash) public {
         // basic check
         require(_isRLocked(rHash), "can not find locker");
@@ -194,6 +256,22 @@ contract QLCToken is ERC20, Ownable {
         return (h == rHash ? true : false);
     }
 
+
+    /**
+     * @dev Return detail info of hash-timer locker
+     *
+     * Parameters:
+     * - `rHash` is the hash of locker
+     * 
+     * Returns:
+     * - the origin text of locker
+     * - locked amount
+     * - account with locked token 
+     * - locked block height
+     * - unlocked block height
+     * - locked state, true or false
+     * - unlocked state, true or false
+     */
     function hashTimer(bytes32 rHash)
         public
         view
@@ -257,9 +335,5 @@ contract QLCToken is ERC20, Ownable {
     ) public override returns (bool) {
         require(_isBalanceEnough(sender, amount), "available balance is not enough");
         super.transferFrom(sender, recipient, amount);
-    }
-
-    function isHashValid(bytes32 rHash, bytes32 rOrigin) public pure returns (bool) {
-        return _isHashValid(rHash, rOrigin);
     }
 }
