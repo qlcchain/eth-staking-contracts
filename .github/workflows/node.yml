@@ -16,7 +16,7 @@ jobs:
       uses: actions/setup-node@v2.1.1
       with:
         node-version: 14.x
-    - run: npm i && npm run solhint && npm run compile
+    - run: npm i && npm run solhint && npm run compile && npm run test
   
     - uses: actions/cache@v2
       with:
