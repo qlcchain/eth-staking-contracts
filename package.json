@@ -24,7 +24,7 @@
     "push": "$(yarn binopenzeppelin) push",
     "version": "$(yarn bin truffle) version",
     "extract-abis": "$(yarn bin truffle-extract) -o .abis",
-    "docs": "$(yarn bin solidity-docgen) -o docs -i contracts ",
+    "docs": "$(yarn bin solidity-docgen) -o docs -i contracts -s single",
     "postpublish": "PACKAGE_VERSION=$(./scripts/package-version.sh) && git tag -ae v$PACKAGE_VERSION && git push --tags",
     "solhint": "$(yarn bin solhint) -f table contracts/**/*.sol",
     "prettier:solidity": "$(yarn bin prettier) --write contracts/**/*.sol"

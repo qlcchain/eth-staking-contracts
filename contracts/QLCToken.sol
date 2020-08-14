@@ -209,5 +209,4 @@ contract QLCToken is ERC20, Ownable {
     function isHashValid(bytes32 rHash, bytes32 rOrigin) public pure returns (bool) {
         return _isHashValid(rHash, rOrigin);
     }
-
 }
