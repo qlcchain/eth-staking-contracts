@@ -158,4 +158,5 @@ package-lock.json
 
 .abis
 
+docs
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,jetbrains+all,macos,soliditytruffle
