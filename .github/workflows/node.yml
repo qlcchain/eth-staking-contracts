@@ -11,16 +11,18 @@ jobs:
     if: contains(github.event.head_commit.message, '[skip ci]') == false && contains(github.event.head_commit.message, '[ci skip]') == false
 
     steps:
-    - uses: actions/checkout@v2
-    - 
-      uses: actions/setup-node@v2.1.1
-      with:
-        node-version: '12.x'
-    - run: npm i && npm run solhint && npm run test
-  
-    - uses: actions/cache@v2
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2.1.1
+        with:
+          node-version: "12.x"
+      - run: npm i && npm run solhint && npm run test
+      - name: upload coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: npm i -g codecov && npx truffle run coverage && codecov
+      - uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
