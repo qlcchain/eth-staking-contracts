@@ -60,11 +60,10 @@ contract QLCToken is ERC20, Ownable {
     function issueLock(bytes32 rHash, uint256 amount) public onlyOwner {
         // basic check
         require(rHash != 0x0, "rHash can not be zero");
-        require(amount >= _minAmount, "amount should not less than zero");
+        require(amount >= _minAmount, "amount should not less than min amount");
         require(!_isRLocked(rHash), "hash value is duplicated");
 
         // add hash-time locker
-        _hashTimers[rHash].lockHeight = block.number;
         _hashTimers[rHash].amount = amount;
         _hashTimers[rHash].isIssue = true;
 
@@ -149,11 +148,9 @@ contract QLCToken is ERC20, Ownable {
         require(_isBalanceEnough(msg.sender, amount), "available balance is not enough");
 
         // add time locker
-        _hashTimers[rHash].lockHeight = block.number;
         _hashTimers[rHash].amount = amount;
         _hashTimers[rHash].user = msg.sender;
         _hashTimers[rHash].isIssue = false;
-
 
         // add user's locked balance
         _lockedBalanceOf[msg.sender] = _lockedBalanceOf[msg.sender].add(amount);
@@ -242,6 +239,7 @@ contract QLCToken is ERC20, Ownable {
 
     function _setRLocked(bytes32 rHash) private {
         _hashTimers[rHash].isLocked = true;
+        _hashTimers[rHash].lockHeight = block.number;
     }
 
     function _setRUnlocked(bytes32 rHash) private {
