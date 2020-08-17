@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-
 /**
  * @dev QLCToken contract realizes cross-chain with Nep5 QLC
  */
@@ -14,10 +13,10 @@ contract QLCToken is ERC20, Ownable {
     using SafeMath for uint256;
 
     struct HashTimer {
-        bytes32 origin; 
+        bytes32 origin;
         uint256 amount;
-        address user;  
-        uint256 lockHeight; 
+        address user;
+        uint256 lockHeight;
         uint256 unlockHeight;
         bool isLocked;
         bool isUnlocked;
@@ -25,11 +24,10 @@ contract QLCToken is ERC20, Ownable {
     }
 
     mapping(bytes32 => HashTimer) private _hashTimers;
-    mapping(address => uint256)   private _lockedBalanceOf;
-    uint256 private _issueInterval   = 5;
+    mapping(address => uint256) private _lockedBalanceOf;
+    uint256 private _issueInterval = 5;
     uint256 private _destoryInterval = 10;
     uint256 private _minAmount = 1;
-
 
     /**
      * @dev Emitted locker state changed
@@ -38,7 +36,7 @@ contract QLCToken is ERC20, Ownable {
      * - `rHash`: index, the hash of locker
      * - `state`: locker state
      * - `amount`: locked amount
-     * - `user`: account with locked token 
+     * - `user`: account with locked token
      * - `rOrigin`: the origin text of locker
      */
     event LockedState(bytes32 indexed rHash, string state, uint256 amount, address user, bytes32 rOrigin);
@@ -54,7 +52,7 @@ contract QLCToken is ERC20, Ownable {
      * Emits a {LockedState} event.
      *
      * Parameters:
-     * - `rHash` is the hash of locker, cannot be zero and duplicated 
+     * - `rHash` is the hash of locker, cannot be zero and duplicated
      * - `amount` should not less than `_minAmount`
      */
     function issueLock(bytes32 rHash, uint256 amount) public onlyOwner {
@@ -85,7 +83,7 @@ contract QLCToken is ERC20, Ownable {
         // basic check
         require(_isRLocked(rHash), "can not find locker");
         require(!_isRUnlocked(rHash), "locker has been unlocked");
-        require(!_isTimeOut(rHash, _issueInterval ), "locker has been timeout");
+        require(!_isTimeOut(rHash, _issueInterval), "locker has been timeout");
         require(_isHashValid(rHash, rOrigin), "hash value is mismatch");
 
         // save r
@@ -100,11 +98,10 @@ contract QLCToken is ERC20, Ownable {
         _setRUnlocked(rHash);
     }
 
-
     /**
      * @dev `issueFetch` must be executed after `issueLock` and the interval must more then `_issueInterval`
      * destory the token locked by `rHash`
-     * Only callable by the Owner. 
+     * Only callable by the Owner.
      *
      * Emits a {LockedState} event.
      *
@@ -124,14 +121,13 @@ contract QLCToken is ERC20, Ownable {
         _setRUnlocked(rHash);
     }
 
-
     /**
      * @dev lock caller's `amount` token by `rHash`
      *
      * Emits a {LockedState} event.
      *
      * Parameters:
-     * - `rHash` is the hash of locker, cannot be zero and duplicated 
+     * - `rHash` is the hash of locker, cannot be zero and duplicated
      * - `amount` should more than zero.
      * - `executor` should be owner's address
      */
@@ -159,11 +155,10 @@ contract QLCToken is ERC20, Ownable {
         _setRLocked(rHash);
     }
 
-
     /**
      * @dev Destory `rHash` locked token by origin text `rOrigin`
      * `destoryUnlock` must be executed after `destoryLock` and the interval must less then `_destoryInterval`
-     * Only callable by the Owner. 
+     * Only callable by the Owner.
      *
      * Emits a {LockedState} event.
      *
@@ -254,17 +249,16 @@ contract QLCToken is ERC20, Ownable {
         return (h == rHash ? true : false);
     }
 
-
     /**
      * @dev Return detail info of hash-timer locker
      *
      * Parameters:
      * - `rHash` is the hash of locker
-     * 
+     *
      * Returns:
      * - the origin text of locker
      * - locked amount
-     * - account with locked token 
+     * - account with locked token
      * - locked block height
      * - unlocked block height
      * - `true` is issue phase, `false` is destory phase
@@ -296,7 +290,7 @@ contract QLCToken is ERC20, Ownable {
      *
      * Parameters:
      * - `addr`: erc20 address
-     * 
+     *
      * Returns:
      * - locked amount
      */
