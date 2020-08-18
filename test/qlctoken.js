@@ -35,7 +35,7 @@ contract('QLCToken', async accounts => {
 
         let minAmount = 1
         let reHash = "0xb44980807202aff0707cc4eebad4f9e47b4d645cf9f4320653ff62dcd575897b"
-        await chai.assert.isRejected(instance.issueLock(reHash, minAmount-1) , 'amount should not less than min amount') 
+        await chai.assert.isRejected(instance.issueLock(reHash, minAmount-1) , 'amount should more than min') 
         await chai.assert.isRejected(instance.issueLock(reHash, issueAmount, {from: accounts[1]}) , 'Ownable: caller is not the owner');
     });
 
@@ -55,23 +55,34 @@ contract('QLCToken', async accounts => {
       assert.ok(timer[3] > 0 , "locked state");
       assert.ok(timer[4] > 0 , "unlocked state");
       assert.equal(timer[5], true, "is issue");
-
     });
+
+    let issueRHashEx   = "0x2c91e38273716587e3d33bdcf712b757048e5b7cfcf430f878f012384fdcf674"
 
     it("issueUnLock exception", async () => {
       let instance = await QLCToken.deployed();
-      let rHash   = "0x2c91e38273716587e3d33bdcf712b757048e5b7cfcf430f878f012384fdcf674"
-      await chai.assert.isRejected(instance.issueUnlock(rHash, issueROrigin,  {from: accounts[2]}) , 'can not find locker')
+      await chai.assert.isRejected(instance.issueUnlock(issueRHashEx, issueROrigin,  {from: accounts[2]}) , 'can not find locker')
       await chai.assert.isRejected(instance.issueUnlock(issueRHash, issueROrigin,  {from: accounts[2]}) , 'locker has been unlocked')
 
-      await instance.issueLock(rHash, issueAmount)
-      await chai.assert.isRejected(instance.issueUnlock(rHash, issueROrigin,  {from: accounts[2]}) , 'hash value is mismatch')
+      await instance.issueLock(issueRHashEx, issueAmount)
+      await chai.assert.isRejected(instance.issueUnlock(issueRHashEx, issueROrigin,  {from: accounts[2]}) , 'hash value is mismatch')
+
   });
-  
 
   // it("issueFetch", async () => {
-  // })
+  //     let instance = await QLCToken.deployed()
+  //     await instance.issueFetch(issueRHashEx) 
 
+  //     console.log(block.height)
+
+  //     // check timer
+  //     let timer = await instance.hashTimer(issueRHashEx)
+  //     assert.equal(timer[0], issueROrigin, "lock origin"); 
+  //     assert.equal(timer[1], 0, "lock amount");
+  //     assert.ok(timer[3] > 0 , "locked state");
+  //     assert.ok(timer[4] > 0 , "unlocked state");
+  //     assert.equal(timer[5], true, "is issue"); 
+  // })
 
   let destoryRHash = "0xcabd59462f2932b25753e4a4fa1ddf766c46589dd70486bf4d99c39b3d23560a"
   let destoryROrigin = "0x9f7f18c7421a77abecafef26824aeda88f09110b396530f356e98141e4d333e5"

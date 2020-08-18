@@ -18,8 +18,6 @@ contract QLCToken is ERC20, Ownable {
         address user;
         uint256 lockHeight;
         uint256 unlockHeight;
-        bool isLocked;
-        bool isUnlocked;
         bool isIssue;
     }
 
@@ -58,7 +56,7 @@ contract QLCToken is ERC20, Ownable {
     function issueLock(bytes32 rHash, uint256 amount) public onlyOwner {
         // basic check
         require(rHash != 0x0, "rHash can not be zero");
-        require(amount >= _minAmount, "amount should not less than min amount");
+        require(amount >= _minAmount, "amount should more than min");
         require(!_isRLocked(rHash), "hash value is duplicated");
 
         // add hash-time locker
@@ -225,20 +223,18 @@ contract QLCToken is ERC20, Ownable {
     }
 
     function _isRLocked(bytes32 rHash) private view returns (bool) {
-        return _hashTimers[rHash].isLocked;
+        return (_hashTimers[rHash].lockHeight > 0 ? true : false);
     }
 
     function _isRUnlocked(bytes32 rHash) private view returns (bool) {
-        return _hashTimers[rHash].isUnlocked;
+        return (_hashTimers[rHash].unlockHeight > 0 ? true : false);
     }
 
     function _setRLocked(bytes32 rHash) private {
-        _hashTimers[rHash].isLocked = true;
         _hashTimers[rHash].lockHeight = block.number;
     }
 
     function _setRUnlocked(bytes32 rHash) private {
-        _hashTimers[rHash].isUnlocked = true;
         _hashTimers[rHash].unlockHeight = block.number;
     }
 
