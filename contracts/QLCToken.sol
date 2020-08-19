@@ -131,7 +131,7 @@ contract QLCToken is ERC20, Ownable {
         require(rHash != 0x0, "zero rHash");
         require(executor == owner(), "wrong executor");
 
-        transfer(address(this), amount);
+        require(transfer(address(this), amount), "transfer fail");
         
         t.amount = amount;
         t.user = msg.sender;
@@ -189,7 +189,7 @@ contract QLCToken is ERC20, Ownable {
         uint256 amount = t.amount;
         _hashTimers[rHash] = t;
 
-        this.transfer(msg.sender, amount);
+        require(this.transfer(msg.sender, amount), "transfer fail");
 
         emit LockedState(rHash, 5,  0x0);
     }
