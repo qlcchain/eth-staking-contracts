@@ -185,11 +185,12 @@ contract QLCToken is ERC20, Ownable {
         require(msg.sender == t.user, "wrong caller");
         require(block.number.sub(t.lockHeight) > _destoryInterval, "not timeout");
 
+        t.unlockHeight = block.number;
         uint256 amount = t.amount;
+        _hashTimers[rHash] = t;
+
         this.transfer(msg.sender, amount);
 
-        t.unlockHeight = block.number;
-        _hashTimers[rHash] = t;
         emit LockedState(rHash, 5,  0x0);
     }
 
