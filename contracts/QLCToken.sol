@@ -35,7 +35,7 @@ contract QLCToken is ERC20, Ownable {
      * - `state`: locker state, 0:issueLock, 1:issueUnlock, 2:issueFetch, 3:destoryLock, 4:destoryUnlock, 5:destoryFetch
      * - `rOrigin`: the origin text of locker
      */
-    event LockedState(bytes32 indexed rHash, uint256 state, bytes32 rOrigin);
+    event LockedState(bytes32 indexed rHash, uint256 state);
 
     constructor() public ERC20("QToken", "qlc") {
         _setupDecimals(8);
@@ -54,15 +54,17 @@ contract QLCToken is ERC20, Ownable {
     function issueLock(bytes32 rHash, uint256 amount) public onlyOwner {
         require(rHash != 0x0, "zero rHash");
         require(amount >= _minAmount, "too little amount");
-
         HashTimer memory t = _hashTimers[rHash];
         require(t.lockHeight == 0, "duplicated hash"); 
+
+        _mint(address(this), amount);
 
         t.amount = amount;
         t.lockHeight = block.number;
         t.isIssue = true;
         _hashTimers[rHash] = t;
-        emit LockedState(rHash, 0, 0x0);
+
+        emit LockedState(rHash, 0);
     }
 
     /**
@@ -81,13 +83,13 @@ contract QLCToken is ERC20, Ownable {
         require(block.number.sub(t.lockHeight) < _issueInterval, "already timeout");
         require(_isHashValid(rHash, rOrigin), "hash mismatch");
 
-        _mint(msg.sender, t.amount);
-        
         t.origin = rOrigin;
         t.user = msg.sender;
         t.unlockHeight = block.number;
         _hashTimers[rHash] = t;
-        emit LockedState(rHash, 1, rOrigin);
+
+        require(this.transfer(msg.sender, t.amount), "transfer fail");        
+        emit LockedState(rHash, 1);
     }
 
     /**
@@ -104,11 +106,13 @@ contract QLCToken is ERC20, Ownable {
         HashTimer memory t = _hashTimers[rHash];
         require( t.lockHeight > 0 && t.unlockHeight ==0, "invaild hash");
         require(block.number.sub(t.lockHeight) > _issueInterval, "not timeout");
+        
+        _burn(address(this), t.amount);
 
-        t.amount = 0;
         t.unlockHeight = block.number;
         _hashTimers[rHash] = t;
-        emit LockedState(rHash, 2, 0x0);
+
+        emit LockedState(rHash, 2);
     }
 
     /**
@@ -126,20 +130,20 @@ contract QLCToken is ERC20, Ownable {
         uint256 amount,
         address executor
     ) public {
+        require(rHash != 0x0, "zero rHash");
         HashTimer memory t = _hashTimers[rHash];
         require(t.lockHeight == 0, "duplicated hash"); 
-        require(rHash != 0x0, "zero rHash");
         require(executor == owner(), "wrong executor");
 
         require(transfer(address(this), amount), "transfer fail");
-        
+
         t.amount = amount;
         t.user = msg.sender;
         t.lockHeight = block.number;
         t.isIssue = false;
-
         _hashTimers[rHash] = t;
-        emit LockedState(rHash, 3, 0x0);
+
+        emit LockedState(rHash, 3);
     }
 
     /**
@@ -159,14 +163,13 @@ contract QLCToken is ERC20, Ownable {
         require(block.number.sub(t.lockHeight) < _issueInterval, "already timeout");   
         require(_isHashValid(rHash, rOrigin), "hash mismatch");
 
-        // destroy lock token
-        uint256 amount = t.amount;
-        _burn(address(this), amount);
+        _burn(address(this), t.amount);
         
         t.origin = rOrigin;
         t.unlockHeight = block.number;
         _hashTimers[rHash] = t;
-        emit LockedState(rHash, 4, rOrigin);
+
+        emit LockedState(rHash, 4);
     }
 
     /**
@@ -179,19 +182,16 @@ contract QLCToken is ERC20, Ownable {
      * - `rHash` is the hash of locker
      */
     function destoryFetch(bytes32 rHash) public {
-        // basic check
         HashTimer memory t = _hashTimers[rHash];
         require( t.lockHeight > 0 && t.unlockHeight ==0, "invaild hash");
         require(msg.sender == t.user, "wrong caller");
         require(block.number.sub(t.lockHeight) > _destoryInterval, "not timeout");
 
         t.unlockHeight = block.number;
-        uint256 amount = t.amount;
         _hashTimers[rHash] = t;
 
-        require(this.transfer(msg.sender, amount), "transfer fail");
-
-        emit LockedState(rHash, 5,  0x0);
+        require(this.transfer(msg.sender, t.amount), "transfer fail");
+        emit LockedState(rHash, 5);
     }
 
     function _isHashValid(bytes32 rHash, bytes32 rOrigin) private pure returns (bool) {

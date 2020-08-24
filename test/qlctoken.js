@@ -27,7 +27,6 @@ contract('QLCToken', async accounts => {
       truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
         assert.equal(ev.state, 0, "error state");
         assert.equal(ev.rHash, issueRHash, "error rHash");
-        assert.equal(ev.rOrigin, 0x0, "error rOrigin");
         return true
       })
 
@@ -37,6 +36,11 @@ contract('QLCToken', async accounts => {
       assert.ok(timer[3] > 0 , "locked state");
       assert.ok(timer[4] == 0 , "unlocked state");
       assert.equal(timer[5], true, "is issue");
+
+      // check balance
+      assert.equal(await instance.balanceOf(accounts[1]), 0, "account 1 amount not is incorrect");
+      assert.equal(await instance.totalSupply(), issueAmount, "total amount not is incorrect");
+
     });
 
     it("issueLock exception", async () => {
@@ -57,7 +61,6 @@ contract('QLCToken', async accounts => {
       truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
         assert.equal(ev.state, 1, "error state");
         assert.equal(ev.rHash, issueRHash, "error rHash");
-        assert.equal(ev.rOrigin, issueROrigin, "error rOrigin");
         return true
       })
 
@@ -104,14 +107,13 @@ contract('QLCToken', async accounts => {
         truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
           assert.equal(ev.state, 2, "error state");
           assert.equal(ev.rHash, issueRHashEx, "error rHash");
-          assert.equal(ev.rOrigin, 0x0, "error rOrigin");
           return true
         })
  
         // check timer
         let timer = await instance.hashTimer(issueRHashEx)
         assert.equal(timer[0], 0x0, "lock origin")
-        assert.equal(timer[1], 0, "lock amount")
+        assert.equal(timer[1], issueAmount, "lock amount")
         assert.ok(timer[3] > 0 , "locked state")
         assert.ok(timer[4] > 0 , "unlocked state")
         assert.equal(timer[5], true, "is issue")
@@ -128,7 +130,6 @@ contract('QLCToken', async accounts => {
     truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
       assert.equal(ev.state, 3, "error state");
       assert.equal(ev.rHash, destoryRHash, "error rHash");
-      assert.equal(ev.rOrigin, 0x0, "error rOrigin");
       return true
     })
 
@@ -163,7 +164,6 @@ contract('QLCToken', async accounts => {
     truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
       assert.equal(ev.state, 4, "error state");
       assert.equal(ev.rHash, destoryRHash, "error rHash");
-      assert.equal(ev.rOrigin, destoryROrigin, "error rOrigin");
       return true
     })
 
@@ -208,7 +208,6 @@ contract('QLCToken', async accounts => {
     truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
       assert.equal(ev.state, 5, "error state");
       assert.equal(ev.rHash, destoryRHashEx, "error rHash");
-      assert.equal(ev.rOrigin, 0x0, "error rOrigin");
       return true
     })
 
