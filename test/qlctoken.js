@@ -35,7 +35,6 @@ contract('QLCToken', async accounts => {
       assert.equal(timer[1], issueAmount, "lock amount");
       assert.ok(timer[3] > 0 , "locked state");
       assert.ok(timer[4] == 0 , "unlocked state");
-      assert.equal(timer[5], true, "is issue");
 
       // check balance
       assert.equal(await instance.balanceOf(accounts[1]), 0, "account 1 amount not is incorrect");
@@ -74,7 +73,6 @@ contract('QLCToken', async accounts => {
       assert.equal(timer[1], issueAmount, "lock amount");
       assert.ok(timer[3] > 0 , "locked state");
       assert.ok(timer[4] > 0 , "unlocked state");
-      assert.equal(timer[5], true, "is issue");
     });
 
     let issueRHashEx   = "0x2c91e38273716587e3d33bdcf712b757048e5b7cfcf430f878f012384fdcf674"
@@ -116,159 +114,158 @@ contract('QLCToken', async accounts => {
         assert.equal(timer[1], issueAmount, "lock amount")
         assert.ok(timer[3] > 0 , "locked state")
         assert.ok(timer[4] > 0 , "unlocked state")
-        assert.equal(timer[5], true, "is issue")
     })
 
-  let destoryRHash = "0xcabd59462f2932b25753e4a4fa1ddf766c46589dd70486bf4d99c39b3d23560a"
-  let destoryROrigin = "0x9f7f18c7421a77abecafef26824aeda88f09110b396530f356e98141e4d333e5"
-  let destoryAmount = 300000
 
-  it("destoryLock", async () => {
-    let instance = await QLCToken.deployed();
-    let txResult = await instance.destoryLock(destoryRHash, destoryAmount, accounts[0], {from: accounts[1]})
-
-    truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
-      assert.equal(ev.state, 3, "error state");
-      assert.equal(ev.rHash, destoryRHash, "error rHash");
-      return true
-    })
-
-    // check timer
-    let timer = await instance.hashTimer(destoryRHash)
-    assert.equal(timer[1], destoryAmount, "lock amount");
-    assert.equal(timer[2], accounts[1], "lock account");
-    assert.ok(timer[3] > 0 , "locked state");
-    assert.ok(timer[4] == 0 , "unlocked state");
-    assert.equal(timer[5], false, "is issue");
-
-    // check balance
-    assert.equal(await instance.balanceOf(accounts[1]), issueAmount - destoryAmount, "account 1 amount not is incorrect");
-    assert.equal(await instance.totalSupply(), issueAmount, "total amount not is incorrect");
-  })
-
-  it("destoryLock exception", async () => {
-    let instance = await QLCToken.deployed();
-    let deHash = "0xb44980807202aff0707cc4eebad4f9e47b4d645cf9f4320653ff62dcd575897b"
-    await chai.assert.isRejected(instance.destoryLock('0x0', destoryAmount, accounts[0]) , 'zero rHash')
-    // await chai.assert.isRejected(instance.destoryLock(deHash, 0, accounts[0]) , 'amount should more than zero') 
-    await chai.assert.isRejected(instance.destoryLock(destoryRHash, destoryAmount, accounts[0]) , 'duplicated hash');
-    await chai.assert.isRejected(instance.destoryLock(deHash, destoryAmount, accounts[2]) , 'wrong executor')
-    // await chai.assert.isRejected(instance.destoryLock(deHash, issueAmount+10, accounts[0]) , 'available balance is not enough')
-  })
-
-  it("destoryUnlock", async () => {
-    let instance = await QLCToken.deployed();
-    await instance.approve(accounts[4], 1, {from: accounts[1]}) // add height
-    let txResult = await instance.destoryUnlock(destoryRHash, destoryROrigin)
-
-    truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
-      assert.equal(ev.state, 4, "error state");
-      assert.equal(ev.rHash, destoryRHash, "error rHash");
-      return true
-    })
-
-    // check balance
-    assert.equal(await instance.balanceOf(accounts[1]), issueAmount - destoryAmount, "account 1 amount not is incorrect");
-    assert.equal(await instance.totalSupply(), issueAmount - destoryAmount, "total amount not is incorrect");
+    let destoryRHash = "0xcabd59462f2932b25753e4a4fa1ddf766c46589dd70486bf4d99c39b3d23560a"
+    let destoryROrigin = "0x9f7f18c7421a77abecafef26824aeda88f09110b396530f356e98141e4d333e5"
+    let destoryAmount = 300000
   
-    // check timer
-    let timer = await instance.hashTimer(destoryRHash)
-    assert.equal(timer[0], destoryROrigin, "lock origin"); 
-    assert.equal(timer[1], destoryAmount, "lock amount");
-    assert.ok(timer[3] > 0 , "locked state");
-    assert.ok(timer[4] > 0 , "unlocked state");
-    assert.equal(timer[5], false, "is issue");
-  })
-
-  let destoryRHashEx   = "0xd2fde0d1dbc48bcbabd8fc703249cc54821670e2e4ec263dda1e48b9cf11fe3e"
-
-  it("destoryUnlock exception", async () => {
-    let instance = await QLCToken.deployed();
-
-    await chai.assert.isRejected(instance.destoryUnlock(destoryRHashEx, destoryROrigin, {from: accounts[2]}) , 'Ownable: caller is not the owner');
-    await chai.assert.isRejected(instance.destoryUnlock(destoryRHashEx, destoryROrigin) , 'invaild hash')
-    await chai.assert.isRejected(instance.destoryUnlock(destoryRHash, destoryROrigin) , 'invaild hash')
-
-    await instance.destoryLock(destoryRHashEx, destoryAmount, accounts[0], {from: accounts[1]})
-    await chai.assert.isRejected(instance.destoryUnlock(destoryRHashEx, destoryROrigin) , 'hash mismatch')
-  });
-
-  it("destoryFetch", async () => {
-    let instance = await QLCToken.deployed()
-    await chai.assert.isRejected(instance.destoryFetch(destoryRHashEx, {from: accounts[2]}), 'wrong caller')
-    let tRash = "0x24b0ffae9c605da524ab5d208a110e44ce186c7338ef437a1145aa7171c3770f"
-    await chai.assert.isRejected(instance.destoryFetch(tRash), 'invaild hash')
-    await chai.assert.isRejected(instance.destoryFetch(destoryRHash),  'invaild hash')
-    await chai.assert.isRejected(instance.destoryFetch(destoryRHashEx,{from: accounts[1]}), 'not timeout')
-    for (let i = 0; i < 12; i++) {
-      await instance.approve(accounts[4], 1, {from: accounts[1]}) // add height
-    }
-    let txResult = await instance.destoryFetch(destoryRHashEx,{from: accounts[1]}) 
-
-    truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
-      assert.equal(ev.state, 5, "error state");
-      assert.equal(ev.rHash, destoryRHashEx, "error rHash");
-      return true
+    it("destoryLock", async () => {
+      let instance = await QLCToken.deployed();
+      let txResult = await instance.destoryLock(destoryRHash, destoryAmount, accounts[0], {from: accounts[1]})
+  
+      truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
+        assert.equal(ev.state, 3, "error state");
+        assert.equal(ev.rHash, destoryRHash, "error rHash");
+        return true
+      })
+  
+      // check timer
+      let timer = await instance.hashTimer(destoryRHash)
+      assert.equal(timer[1], destoryAmount, "lock amount");
+      assert.equal(timer[2], accounts[1], "lock account");
+      assert.ok(timer[3] > 0 , "locked state");
+      assert.ok(timer[4] == 0 , "unlocked state");
+  
+      // check balance
+      assert.equal(await instance.balanceOf(accounts[1]), issueAmount - destoryAmount, "account 1 amount not is incorrect");
+      assert.equal(await instance.totalSupply(), issueAmount, "total amount not is incorrect");
     })
-
-    // check timer
-    let timer = await instance.hashTimer(destoryRHashEx)
-    assert.equal(timer[0], 0x0, "lock origin")
-    assert.equal(timer[1], destoryAmount, "lock amount")
-    assert.ok(timer[3] > 0 , "locked state")
-    assert.ok(timer[4] > 0 , "unlocked state")
-    assert.equal(timer[5], false, "is issue")
-  })
-
-  let trAmount = 100000
-
-  it("transaction", async () => {
-    let instance = await QLCToken.deployed();
-    let oBalancea = await instance.balanceOf(accounts[1])
-    await instance.transfer(accounts[4], trAmount, {from: accounts[1]})
-    assert.equal(await instance.balanceOf(accounts[1]), oBalancea - trAmount, "account a amount not is incorrect");
-    assert.equal(await instance.balanceOf(accounts[4]), trAmount, "account b amount not is incorrect");
-  }); 
-
-  it("transferFrom", async () => {
-    let instance = await QLCToken.deployed();
-    let tfAmount = 500
-
-    await instance.approve(accounts[5], tfAmount, {from: accounts[4]})
-    assert.equal(await instance.allowance(accounts[4], accounts[5]),  tfAmount, "error amount");
-
-    await instance.transferFrom(accounts[4], accounts[6], tfAmount, {from: accounts[5]})
-    assert.equal(await instance.balanceOf(accounts[4]), trAmount - tfAmount, "account a amount not is incorrect");
-    assert.equal(await instance.balanceOf(accounts[6]), tfAmount, "account b amount not is incorrect");
-  }); 
-
-    // it("send", async () => {
-    //     let account_one = accounts[0];
-    //     let account_two = accounts[1];
+  
+    it("destoryLock exception", async () => {
+      let instance = await QLCToken.deployed();
+      let deHash = "0xb44980807202aff0707cc4eebad4f9e47b4d645cf9f4320653ff62dcd575897b"
+      await chai.assert.isRejected(instance.destoryLock('0x0', destoryAmount, accounts[0]) , 'zero rHash')
+      // await chai.assert.isRejected(instance.destoryLock(deHash, 0, accounts[0]) , 'amount should more than zero') 
+      await chai.assert.isRejected(instance.destoryLock(destoryRHash, destoryAmount, accounts[0]) , 'duplicated hash');
+      await chai.assert.isRejected(instance.destoryLock(deHash, destoryAmount, accounts[2]) , 'wrong executor')
+      // await chai.assert.isRejected(instance.destoryLock(deHash, issueAmount+10, accounts[0]) , 'available balance is not enough')
+    })
+  
+    it("destoryUnlock", async () => {
+      let instance = await QLCToken.deployed();
+      await instance.approve(accounts[4], 1, {from: accounts[1]}) // add height
+      let txResult = await instance.destoryUnlock(destoryRHash, destoryROrigin)
+  
+      truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
+        assert.equal(ev.state, 4, "error state");
+        assert.equal(ev.rHash, destoryRHash, "error rHash");
+        return true
+      })
+  
+      // check balance
+      assert.equal(await instance.balanceOf(accounts[1]), issueAmount - destoryAmount, "account 1 amount not is incorrect");
+      assert.equal(await instance.totalSupply(), issueAmount - destoryAmount, "total amount not is incorrect");
     
-    //     let amount = 10;
-    
-    //     let instance = await QLCToken.deployed();
-    //     let meta = instance;
-    
-    //     let balance = await meta.balanceOf.call(account_one);
-    //     let account_one_starting_balance = balance.toNumber();
-    
-    //     balance = await meta.balanceOf.call(account_two);
-    //     let account_two_starting_balance = balance.toNumber();
-    //     await meta.transfer(account_two, amount);
-    
-    //     balance = await meta.balanceOf.call(account_one);
-    //     let account_one_ending_balance = balance.toNumber();
-    
-    //     balance = await meta.balanceOf.call(account_two);
-    //     let account_two_ending_balance = balance.toNumber();
+      // check timer
+      let timer = await instance.hashTimer(destoryRHash)
+      assert.equal(timer[0], destoryROrigin, "lock origin"); 
+      assert.equal(timer[1], destoryAmount, "lock amount");
+      assert.ok(timer[3] > 0 , "locked state");
+      assert.ok(timer[4] > 0 , "unlocked state");
+    })
+  
+    let destoryRHashEx   = "0xd2fde0d1dbc48bcbabd8fc703249cc54821670e2e4ec263dda1e48b9cf11fe3e"
+  
+    it("destoryUnlock exception", async () => {
+      let instance = await QLCToken.deployed();
+  
+      await chai.assert.isRejected(instance.destoryUnlock(destoryRHashEx, destoryROrigin, {from: accounts[2]}) , 'Ownable: caller is not the owner');
+      await chai.assert.isRejected(instance.destoryUnlock(destoryRHashEx, destoryROrigin) , 'invaild hash')
+      await chai.assert.isRejected(instance.destoryUnlock(destoryRHash, destoryROrigin) , 'invaild hash')
+  
+      await instance.destoryLock(destoryRHashEx, destoryAmount, accounts[0], {from: accounts[1]})
+      await chai.assert.isRejected(instance.destoryUnlock(destoryRHashEx, destoryROrigin) , 'hash mismatch')
+    });
+  
+    it("destoryFetch", async () => {
+      let instance = await QLCToken.deployed()
+      await chai.assert.isRejected(instance.destoryFetch(destoryRHashEx, {from: accounts[2]}), 'wrong caller')
+      let tRash = "0x24b0ffae9c605da524ab5d208a110e44ce186c7338ef437a1145aa7171c3770f"
+      await chai.assert.isRejected(instance.destoryFetch(tRash), 'invaild hash')
+      await chai.assert.isRejected(instance.destoryFetch(destoryRHash),  'invaild hash')
+      await chai.assert.isRejected(instance.destoryFetch(destoryRHashEx,{from: accounts[1]}), 'not timeout')
+      for (let i = 0; i < 12; i++) {
+        await instance.approve(accounts[4], 1, {from: accounts[1]}) // add height
+      }
+      let txResult = await instance.destoryFetch(destoryRHashEx,{from: accounts[1]}) 
+  
+      truffleAssert.eventEmitted(txResult, 'LockedState', (ev) => {
+        assert.equal(ev.state, 5, "error state");
+        assert.equal(ev.rHash, destoryRHashEx, "error rHash");
+        return true
+      })
+  
+      // check timer
+      let timer = await instance.hashTimer(destoryRHashEx)
+      assert.equal(timer[0], 0x0, "lock origin")
+      assert.equal(timer[1], destoryAmount, "lock amount")
+      assert.ok(timer[3] > 0 , "locked state")
+      assert.ok(timer[4] > 0 , "unlocked state")
+    })
+  
+    let trAmount = 100000
+  
+    it("transaction", async () => {
+      let instance = await QLCToken.deployed();
+      let oBalancea = await instance.balanceOf(accounts[1])
+      await instance.transfer(accounts[4], trAmount, {from: accounts[1]})
+      assert.equal(await instance.balanceOf(accounts[1]), oBalancea - trAmount, "account a amount not is incorrect");
+      assert.equal(await instance.balanceOf(accounts[4]), trAmount, "account b amount not is incorrect");
+    }); 
+  
+    it("transferFrom", async () => {
+      let instance = await QLCToken.deployed();
+      let tfAmount = 500
+  
+      await instance.approve(accounts[5], tfAmount, {from: accounts[4]})
+      assert.equal(await instance.allowance(accounts[4], accounts[5]),  tfAmount, "error amount");
+  
+      await instance.transferFrom(accounts[4], accounts[6], tfAmount, {from: accounts[5]})
+      assert.equal(await instance.balanceOf(accounts[4]), trAmount - tfAmount, "account a amount not is incorrect");
+      assert.equal(await instance.balanceOf(accounts[6]), tfAmount, "account b amount not is incorrect");
+    }); 
+  
+      // it("send", async () => {
+      //     let account_one = accounts[0];
+      //     let account_two = accounts[1];
+      
+      //     let amount = 10;
+      
+      //     let instance = await QLCToken.deployed();
+      //     let meta = instance;
+      
+      //     let balance = await meta.balanceOf.call(account_one);
+      //     let account_one_starting_balance = balance.toNumber();
+      
+      //     balance = await meta.balanceOf.call(account_two);
+      //     let account_two_starting_balance = balance.toNumber();
+      //     await meta.transfer(account_two, amount);
+      
+      //     balance = await meta.balanceOf.call(account_one);
+      //     let account_one_ending_balance = balance.toNumber();
+      
+      //     balance = await meta.balanceOf.call(account_two);
+      //     let account_two_ending_balance = balance.toNumber();
+  
+      //     console.log(account_one_starting_balance)
+      //     console.log(account_one_ending_balance)
+      //     console.log(account_two_starting_balance)
+      //     console.log(account_two_ending_balance)
+      //     console.log(await meta.balanceOf.call(account_one))
+      //  });
 
-    //     console.log(account_one_starting_balance)
-    //     console.log(account_one_ending_balance)
-    //     console.log(account_two_starting_balance)
-    //     console.log(account_two_ending_balance)
-    //     console.log(await meta.balanceOf.call(account_one))
-    //  });
+
 });
 
