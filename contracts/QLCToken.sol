@@ -10,15 +10,15 @@ import "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
 /**
  * @notice QLCToken contract realizes cross-chain with Nep5 QLC
  */
-contract QLCToken  is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
+contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
     using SafeMath for uint256;
-    
+
     mapping(bytes32 => bytes32) private _lockedOrigin;
     mapping(bytes32 => uint256) private _lockedAmount;
     mapping(bytes32 => address) private _lockedUser;
     mapping(bytes32 => uint256) private _lockedHeight;
     mapping(bytes32 => uint256) private _unlockedHeight;
-    
+
     uint256 private _issueInterval;
     uint256 private _destoryInterval;
     uint256 private _minAmount;
@@ -29,10 +29,16 @@ contract QLCToken  is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      * Parameters:
      * - `rHash`: index, the hash of locker
      * - `state`: locker state, 0:issueLock, 1:issueUnlock, 2:issueFetch, 3:destoryLock, 4:destoryUnlock, 5:destoryFetch
-     * - `rOrigin`: the origin text of locker
      */
     event LockedState(bytes32 indexed rHash, uint256 state);
 
+    /**
+     * @dev Initializes the QLCToken
+     *
+     * Parameters:
+     * - `name`: name of the token
+     * - `symbol`: the token symbol
+     */
     function initialize(string memory name, string memory symbol) public initializer {
         __ERC20_init(name, symbol);
         __Ownable_init();
@@ -56,10 +62,10 @@ contract QLCToken  is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
     function issueLock(bytes32 rHash, uint256 amount) public onlyOwner {
         require(rHash != 0x0, "zero rHash");
         require(amount >= _minAmount, "too little amount");
-        require(_lockedHeight[rHash] == 0, "duplicated hash"); 
+        require(_lockedHeight[rHash] == 0, "duplicated hash");
 
         _mint(address(this), amount);
-        
+
         _lockedAmount[rHash] = amount;
         _lockedHeight[rHash] = block.number;
 
@@ -77,17 +83,16 @@ contract QLCToken  is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      * - `rOrigin` is the origin text of locker
      */
     function issueUnlock(bytes32 rHash, bytes32 rOrigin) public {
-        uint256 lockedHeight = _lockedHeight[rHash] ;
-        require( lockedHeight > 0 && _unlockedHeight[rHash] ==0, "invaild hash");
+        uint256 lockedHeight = _lockedHeight[rHash];
+        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
         require(block.number.sub(lockedHeight) < _issueInterval, "already timeout");
         require(_isHashValid(rHash, rOrigin), "hash mismatch");
-
 
         _lockedOrigin[rHash] = rOrigin;
         _lockedUser[rHash] = msg.sender;
         _unlockedHeight[rHash] = block.number;
-        
-        require(this.transfer(msg.sender, _lockedAmount[rHash]), "transfer fail");        
+
+        require(this.transfer(msg.sender, _lockedAmount[rHash]), "transfer fail");
         emit LockedState(rHash, 1);
     }
 
@@ -102,10 +107,10 @@ contract QLCToken  is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      * - `rHash` is the hash of locker
      */
     function issueFetch(bytes32 rHash) public onlyOwner {
-        uint256 lockedHeight = _lockedHeight[rHash] ;
-        require( lockedHeight > 0 && _unlockedHeight[rHash]  ==0, "invaild hash");
+        uint256 lockedHeight = _lockedHeight[rHash];
+        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
         require(block.number.sub(lockedHeight) > _issueInterval, "not timeout");
-        
+
         _burn(address(this), _lockedAmount[rHash]);
 
         _unlockedHeight[rHash] = block.number;
@@ -129,7 +134,7 @@ contract QLCToken  is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
         address executor
     ) public {
         require(rHash != 0x0, "zero rHash");
-        require( _lockedHeight[rHash]  == 0, "duplicated hash"); 
+        require(_lockedHeight[rHash] == 0, "duplicated hash");
         require(executor == owner(), "wrong executor");
 
         require(transfer(address(this), amount), "transfer fail");
@@ -153,13 +158,13 @@ contract QLCToken  is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      * - `rOrigin` is the origin text of locker
      */
     function destoryUnlock(bytes32 rHash, bytes32 rOrigin) public onlyOwner {
-        uint256 lockedHeight = _lockedHeight[rHash] ;
-        require( lockedHeight > 0 && _unlockedHeight[rHash]  ==0, "invaild hash");
-        require(block.number.sub(lockedHeight) < _issueInterval, "already timeout");   
+        uint256 lockedHeight = _lockedHeight[rHash];
+        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
+        require(block.number.sub(lockedHeight) < _issueInterval, "already timeout");
         require(_isHashValid(rHash, rOrigin), "hash mismatch");
 
         _burn(address(this), _lockedAmount[rHash]);
-        
+
         _lockedOrigin[rHash] = rOrigin;
         _unlockedHeight[rHash] = block.number;
 
@@ -176,8 +181,8 @@ contract QLCToken  is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      * - `rHash` is the hash of locker
      */
     function destoryFetch(bytes32 rHash) public {
-        uint256 lockedHeight = _lockedHeight[rHash] ;
-        require( lockedHeight > 0 && _unlockedHeight[rHash]  ==0, "invaild hash");
+        uint256 lockedHeight = _lockedHeight[rHash];
+        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
         require(msg.sender == _lockedUser[rHash], "wrong caller");
         require(block.number.sub(lockedHeight) > _destoryInterval, "not timeout");
 
@@ -217,7 +222,12 @@ contract QLCToken  is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
             uint256
         )
     {
-        return (_lockedOrigin[rHash], _lockedAmount[rHash], _lockedUser[rHash], _lockedHeight[rHash], _unlockedHeight[rHash]);
+        return (
+            _lockedOrigin[rHash],
+            _lockedAmount[rHash],
+            _lockedUser[rHash],
+            _lockedHeight[rHash],
+            _unlockedHeight[rHash]
+        );
     }
-
 }
