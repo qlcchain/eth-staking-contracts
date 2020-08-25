@@ -33,6 +33,15 @@ QLCToken contract realizes cross-chain with Nep5 QLC
 
 
 
+### `initialize(string name, string symbol)` (public)
+
+
+
+Initializes the QLCToken
+Parameters:
+- `name`: name of the token
+- `symbol`: the token symbol
+
 ### `issueLock(bytes32 rHash, uint256 amount)` (public)
 
 
@@ -99,7 +108,7 @@ Emits a {LockedState} event.
 Parameters:
 - `rHash` is the hash of locker
 
-### `hashTimer(bytes32 rHash) → bytes32, uint256, address, uint256, uint256, bool` (public)
+### `hashTimer(bytes32 rHash) → bytes32, uint256, address, uint256, uint256` (public)
 
 
 
@@ -112,10 +121,9 @@ Returns:
 - account with locked token
 - locked block height
 - unlocked block height
-- `true` is issue phase, `false` is destory phase
 
 
-### `LockedState(bytes32 rHash, uint256 state, bytes32 rOrigin)`
+### `LockedState(bytes32 rHash, uint256 state)`
 
 
 
@@ -123,5 +131,4 @@ Emitted locker state changed
 Parameters:
 - `rHash`: index, the hash of locker
 - `state`: locker state, 0:issueLock, 1:issueUnlock, 2:issueFetch, 3:destoryLock, 4:destoryUnlock, 5:destoryFetch
-- `rOrigin`: the origin text of locker
 

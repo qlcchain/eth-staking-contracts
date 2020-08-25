@@ -1,5 +1,7 @@
-const QLCToken = artifacts.require("QLCToken");
+const QLCCoin = artifacts.require("QLCToken");
 
-module.exports = function (deployer) {
-  deployer.deploy(QLCToken);
+const { deployProxy } = require('@openzeppelin/truffle-upgrades');
+
+module.exports = async function (deployer) {
+   await deployProxy(QLCCoin, ['QLCToken', 'qlc'], { deployer });
 };

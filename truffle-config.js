@@ -28,6 +28,7 @@ module.exports = {
         return new HDWalletProvider(mnemonic, 'https://rinkeby.infura.io/v3/0865b420656e4d70bcbbcc76e265fd57')
       },
       network_id: 4,
+      skipDryRun: true,
       networkCheckTimeout: 10000,
       gas: 4612388  // Gas limit used for deploys
     },

@@ -2,30 +2,26 @@
 
 pragma solidity ^0.6.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-
+import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
 
 /**
  * @notice QLCToken contract realizes cross-chain with Nep5 QLC
  */
-contract QLCToken is ERC20, Ownable {
+contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
     using SafeMath for uint256;
 
-    struct HashTimer {
-        bytes32 origin;
-        uint256 amount;
-        address user;
-        uint256 lockHeight;
-        uint256 unlockHeight;
-        bool isIssue;
-    }
+    mapping(bytes32 => bytes32) private _lockedOrigin;
+    mapping(bytes32 => uint256) private _lockedAmount;
+    mapping(bytes32 => address) private _lockedUser;
+    mapping(bytes32 => uint256) private _lockedHeight;
+    mapping(bytes32 => uint256) private _unlockedHeight;
 
-    mapping(bytes32 => HashTimer) private _hashTimers;
-    uint256 private _issueInterval = 6;
-    uint256 private _destoryInterval = 10;
-    uint256 private _minAmount = 1;
+    uint256 private _issueInterval;
+    uint256 private _destoryInterval;
+    uint256 private _minAmount;
 
     /**
      * @dev Emitted locker state changed
@@ -33,13 +29,25 @@ contract QLCToken is ERC20, Ownable {
      * Parameters:
      * - `rHash`: index, the hash of locker
      * - `state`: locker state, 0:issueLock, 1:issueUnlock, 2:issueFetch, 3:destoryLock, 4:destoryUnlock, 5:destoryFetch
-     * - `rOrigin`: the origin text of locker
      */
-    event LockedState(bytes32 indexed rHash, uint256 state, bytes32 rOrigin);
+    event LockedState(bytes32 indexed rHash, uint256 state);
 
-    constructor() public ERC20("QToken", "qlc") {
+    /**
+     * @dev Initializes the QLCToken
+     *
+     * Parameters:
+     * - `name`: name of the token
+     * - `symbol`: the token symbol
+     */
+    function initialize(string memory name, string memory symbol) public initializer {
+        __ERC20_init(name, symbol);
+        __Ownable_init();
         _setupDecimals(8);
         _mint(msg.sender, 0);
+
+        _issueInterval = 6;
+        _destoryInterval = 10;
+        _minAmount = 1;
     }
 
     /**
@@ -54,15 +62,14 @@ contract QLCToken is ERC20, Ownable {
     function issueLock(bytes32 rHash, uint256 amount) public onlyOwner {
         require(rHash != 0x0, "zero rHash");
         require(amount >= _minAmount, "too little amount");
+        require(_lockedHeight[rHash] == 0, "duplicated hash");
 
-        HashTimer memory t = _hashTimers[rHash];
-        require(t.lockHeight == 0, "duplicated hash"); 
+        _mint(address(this), amount);
 
-        t.amount = amount;
-        t.lockHeight = block.number;
-        t.isIssue = true;
-        _hashTimers[rHash] = t;
-        emit LockedState(rHash, 0, 0x0);
+        _lockedAmount[rHash] = amount;
+        _lockedHeight[rHash] = block.number;
+
+        emit LockedState(rHash, 0);
     }
 
     /**
@@ -76,18 +83,17 @@ contract QLCToken is ERC20, Ownable {
      * - `rOrigin` is the origin text of locker
      */
     function issueUnlock(bytes32 rHash, bytes32 rOrigin) public {
-        HashTimer memory t = _hashTimers[rHash];
-        require( t.lockHeight > 0 && t.unlockHeight ==0, "invaild hash");
-        require(block.number.sub(t.lockHeight) < _issueInterval, "already timeout");
+        uint256 lockedHeight = _lockedHeight[rHash];
+        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
+        require(block.number.sub(lockedHeight) < _issueInterval, "already timeout");
         require(_isHashValid(rHash, rOrigin), "hash mismatch");
 
-        _mint(msg.sender, t.amount);
-        
-        t.origin = rOrigin;
-        t.user = msg.sender;
-        t.unlockHeight = block.number;
-        _hashTimers[rHash] = t;
-        emit LockedState(rHash, 1, rOrigin);
+        _lockedOrigin[rHash] = rOrigin;
+        _lockedUser[rHash] = msg.sender;
+        _unlockedHeight[rHash] = block.number;
+
+        require(this.transfer(msg.sender, _lockedAmount[rHash]), "transfer fail");
+        emit LockedState(rHash, 1);
     }
 
     /**
@@ -101,14 +107,15 @@ contract QLCToken is ERC20, Ownable {
      * - `rHash` is the hash of locker
      */
     function issueFetch(bytes32 rHash) public onlyOwner {
-        HashTimer memory t = _hashTimers[rHash];
-        require( t.lockHeight > 0 && t.unlockHeight ==0, "invaild hash");
-        require(block.number.sub(t.lockHeight) > _issueInterval, "not timeout");
+        uint256 lockedHeight = _lockedHeight[rHash];
+        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
+        require(block.number.sub(lockedHeight) > _issueInterval, "not timeout");
 
-        t.amount = 0;
-        t.unlockHeight = block.number;
-        _hashTimers[rHash] = t;
-        emit LockedState(rHash, 2, 0x0);
+        _burn(address(this), _lockedAmount[rHash]);
+
+        _unlockedHeight[rHash] = block.number;
+
+        emit LockedState(rHash, 2);
     }
 
     /**
@@ -126,20 +133,17 @@ contract QLCToken is ERC20, Ownable {
         uint256 amount,
         address executor
     ) public {
-        HashTimer memory t = _hashTimers[rHash];
-        require(t.lockHeight == 0, "duplicated hash"); 
         require(rHash != 0x0, "zero rHash");
+        require(_lockedHeight[rHash] == 0, "duplicated hash");
         require(executor == owner(), "wrong executor");
 
         require(transfer(address(this), amount), "transfer fail");
-        
-        t.amount = amount;
-        t.user = msg.sender;
-        t.lockHeight = block.number;
-        t.isIssue = false;
 
-        _hashTimers[rHash] = t;
-        emit LockedState(rHash, 3, 0x0);
+        _lockedAmount[rHash] = amount;
+        _lockedUser[rHash] = msg.sender;
+        _lockedHeight[rHash] = block.number;
+
+        emit LockedState(rHash, 3);
     }
 
     /**
@@ -154,19 +158,17 @@ contract QLCToken is ERC20, Ownable {
      * - `rOrigin` is the origin text of locker
      */
     function destoryUnlock(bytes32 rHash, bytes32 rOrigin) public onlyOwner {
-        HashTimer memory t = _hashTimers[rHash];
-        require( t.lockHeight > 0 && t.unlockHeight ==0, "invaild hash");
-        require(block.number.sub(t.lockHeight) < _issueInterval, "already timeout");   
+        uint256 lockedHeight = _lockedHeight[rHash];
+        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
+        require(block.number.sub(lockedHeight) < _issueInterval, "already timeout");
         require(_isHashValid(rHash, rOrigin), "hash mismatch");
 
-        // destroy lock token
-        uint256 amount = t.amount;
-        _burn(address(this), amount);
-        
-        t.origin = rOrigin;
-        t.unlockHeight = block.number;
-        _hashTimers[rHash] = t;
-        emit LockedState(rHash, 4, rOrigin);
+        _burn(address(this), _lockedAmount[rHash]);
+
+        _lockedOrigin[rHash] = rOrigin;
+        _unlockedHeight[rHash] = block.number;
+
+        emit LockedState(rHash, 4);
     }
 
     /**
@@ -179,19 +181,15 @@ contract QLCToken is ERC20, Ownable {
      * - `rHash` is the hash of locker
      */
     function destoryFetch(bytes32 rHash) public {
-        // basic check
-        HashTimer memory t = _hashTimers[rHash];
-        require( t.lockHeight > 0 && t.unlockHeight ==0, "invaild hash");
-        require(msg.sender == t.user, "wrong caller");
-        require(block.number.sub(t.lockHeight) > _destoryInterval, "not timeout");
+        uint256 lockedHeight = _lockedHeight[rHash];
+        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
+        require(msg.sender == _lockedUser[rHash], "wrong caller");
+        require(block.number.sub(lockedHeight) > _destoryInterval, "not timeout");
 
-        t.unlockHeight = block.number;
-        uint256 amount = t.amount;
-        _hashTimers[rHash] = t;
+        _unlockedHeight[rHash] = block.number;
 
-        require(this.transfer(msg.sender, amount), "transfer fail");
-
-        emit LockedState(rHash, 5,  0x0);
+        require(this.transfer(msg.sender, _lockedAmount[rHash]), "transfer fail");
+        emit LockedState(rHash, 5);
     }
 
     function _isHashValid(bytes32 rHash, bytes32 rOrigin) private pure returns (bool) {
@@ -212,7 +210,6 @@ contract QLCToken is ERC20, Ownable {
      * - account with locked token
      * - locked block height
      * - unlocked block height
-     * - `true` is issue phase, `false` is destory phase
      */
     function hashTimer(bytes32 rHash)
         public
@@ -222,11 +219,15 @@ contract QLCToken is ERC20, Ownable {
             uint256,
             address,
             uint256,
-            uint256,
-            bool
+            uint256
         )
     {
-        HashTimer memory t = _hashTimers[rHash];
-        return (t.origin,t.amount,t.user,t.lockHeight,t.unlockHeight,t.isIssue);
+        return (
+            _lockedOrigin[rHash],
+            _lockedAmount[rHash],
+            _lockedUser[rHash],
+            _lockedHeight[rHash],
+            _unlockedHeight[rHash]
+        );
     }
 }
