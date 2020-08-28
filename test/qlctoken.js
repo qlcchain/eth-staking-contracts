@@ -12,12 +12,22 @@ contract('QLCToken', async accounts => {
     let issueROrigin = "0xb44980807202aff0707cc4eebad4f9e47b4d645cf9f4320653ff62dcd575897b"
     let issueAmount = 1000000
 
-    it("Owner should have 0 QLCToken initially", function() {
-      return QLCToken.deployed().then(function(instance) {
-        return instance.balanceOf.call(accounts[0]);
-      }).then(function(balance) {
-        assert.equal(balance.valueOf(), 0, "Owner should have 0 QLCToken initially");
-      });
+    // it("Owner should have 0 QLCToken initially", function() {
+    //   return QLCToken.deployed().then(function(instance) {
+    //     return instance.balanceOf.call(accounts[0]);
+    //   }).then(function(balance) {
+    //     assert.equal(balance.valueOf(), 0, "Owner should have 0 QLCToken initially");
+    //   });
+    // });
+
+    it("basic info", async () => {
+      let instance = await QLCToken.deployed();
+      assert.equal(await instance.balanceOf(accounts[0]), 0, "Owner should have 0 QLCToken initially"); 
+      assert.equal(await instance.owner(), accounts[0], "wrong owner");
+      assert.equal(await instance.symbol(), "qlc", "wrong symbol"); 
+      assert.equal(await instance.totalSupply(), 0, "wrong totalSupply");  
+      assert.equal(await instance.name(), "QLCToken", "wrong name");   
+      assert.equal(await instance.decimals(), 8, "wrong decimals");   
     });
 
     it("issueLock", async () => {
