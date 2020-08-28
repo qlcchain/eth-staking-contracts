@@ -79,8 +79,8 @@ contract('QLCToken', async accounts => {
 
     it("issueUnLock exception", async () => {
       let instance = await QLCToken.deployed();
-      await chai.assert.isRejected(instance.issueUnlock(issueRHashEx, issueROrigin,  {from: accounts[2]}) , 'invaild hash')
-      await chai.assert.isRejected(instance.issueUnlock(issueRHash, issueROrigin,  {from: accounts[2]}) , 'invaild hash')
+      await chai.assert.isRejected(instance.issueUnlock(issueRHashEx, issueROrigin,  {from: accounts[2]}) , 'hash not locked')
+      await chai.assert.isRejected(instance.issueUnlock(issueRHash, issueROrigin,  {from: accounts[2]}) , 'hash has unlocked')
 
       await instance.issueLock(issueRHashEx, issueAmount)
       await chai.assert.isRejected(instance.issueUnlock(issueRHashEx, issueROrigin,  {from: accounts[2]}) , 'hash mismatch')
@@ -91,13 +91,13 @@ contract('QLCToken', async accounts => {
         await chai.assert.isRejected(instance.issueFetch(issueRHashEx), 'not timeout')
         await chai.assert.isRejected(instance.issueFetch(issueRHashEx, {from: accounts[1]}), 'Ownable: caller is not the owner')
         let tRash = "0x24b0ffae9c605da524ab5d208a110e44ce186c7338ef437a1145aa7171c3770f"
-        await chai.assert.isRejected(instance.issueFetch(tRash), 'invaild hash')
-        await chai.assert.isRejected(instance.issueFetch(issueRHash),  'invaild hash')
+        await chai.assert.isRejected(instance.issueFetch(tRash), 'hash not locked')
+        await chai.assert.isRejected(instance.issueFetch(issueRHash),  'hash has unlocked')
         // let a = await instance.getHeight()
         // console.log(a.toNumber())
         // Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000* 9 * 5);
         // await new Promise(resolve => setTimeout(resolve, 1000 * 30))
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 12; i++) {
           await instance.approve(accounts[4], 1, {from: accounts[1]}) // add height
         }
         let txResult = await instance.issueFetch(issueRHashEx) 
@@ -182,8 +182,8 @@ contract('QLCToken', async accounts => {
       let instance = await QLCToken.deployed();
   
       await chai.assert.isRejected(instance.destoryUnlock(destoryRHashEx, destoryROrigin, {from: accounts[2]}) , 'Ownable: caller is not the owner');
-      await chai.assert.isRejected(instance.destoryUnlock(destoryRHashEx, destoryROrigin) , 'invaild hash')
-      await chai.assert.isRejected(instance.destoryUnlock(destoryRHash, destoryROrigin) , 'invaild hash')
+      await chai.assert.isRejected(instance.destoryUnlock(destoryRHashEx, destoryROrigin) , 'hash not locked')
+      await chai.assert.isRejected(instance.destoryUnlock(destoryRHash, destoryROrigin) , 'hash has unlocked')
   
       await instance.destoryLock(destoryRHashEx, destoryAmount, accounts[0], {from: accounts[1]})
       await chai.assert.isRejected(instance.destoryUnlock(destoryRHashEx, destoryROrigin) , 'hash mismatch')
@@ -193,10 +193,10 @@ contract('QLCToken', async accounts => {
       let instance = await QLCToken.deployed()
       await chai.assert.isRejected(instance.destoryFetch(destoryRHashEx, {from: accounts[2]}), 'wrong caller')
       let tRash = "0x24b0ffae9c605da524ab5d208a110e44ce186c7338ef437a1145aa7171c3770f"
-      await chai.assert.isRejected(instance.destoryFetch(tRash), 'invaild hash')
-      await chai.assert.isRejected(instance.destoryFetch(destoryRHash),  'invaild hash')
+      await chai.assert.isRejected(instance.destoryFetch(tRash), 'hash not locked')
+      await chai.assert.isRejected(instance.destoryFetch(destoryRHash),  'hash has unlocked')
       await chai.assert.isRejected(instance.destoryFetch(destoryRHashEx,{from: accounts[1]}), 'not timeout')
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < 22; i++) {
         await instance.approve(accounts[4], 1, {from: accounts[1]}) // add height
       }
       let txResult = await instance.destoryFetch(destoryRHashEx,{from: accounts[1]}) 

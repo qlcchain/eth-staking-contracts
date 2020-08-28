@@ -45,8 +45,8 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
         _setupDecimals(8);
         _mint(msg.sender, 0);
 
-        _issueInterval = 6;
-        _destoryInterval = 10;
+        _issueInterval = 10;
+        _destoryInterval = 20;
         _minAmount = 1;
     }
 
@@ -84,7 +84,8 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      */
     function issueUnlock(bytes32 rHash, bytes32 rOrigin) public {
         uint256 lockedHeight = _lockedHeight[rHash];
-        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
+        require(lockedHeight > 0, "hash not locked");
+        require(_unlockedHeight[rHash] == 0, "hash has unlocked");
         require(block.number.sub(lockedHeight) < _issueInterval, "already timeout");
         require(_isHashValid(rHash, rOrigin), "hash mismatch");
 
@@ -108,7 +109,8 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      */
     function issueFetch(bytes32 rHash) public onlyOwner {
         uint256 lockedHeight = _lockedHeight[rHash];
-        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
+        require(lockedHeight > 0, "hash not locked");
+        require(_unlockedHeight[rHash] == 0, "hash has unlocked");
         require(block.number.sub(lockedHeight) > _issueInterval, "not timeout");
 
         _burn(address(this), _lockedAmount[rHash]);
@@ -159,7 +161,8 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      */
     function destoryUnlock(bytes32 rHash, bytes32 rOrigin) public onlyOwner {
         uint256 lockedHeight = _lockedHeight[rHash];
-        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
+        require(lockedHeight > 0, "hash not locked");
+        require(_unlockedHeight[rHash] == 0, "hash has unlocked");
         require(block.number.sub(lockedHeight) < _issueInterval, "already timeout");
         require(_isHashValid(rHash, rOrigin), "hash mismatch");
 
@@ -182,7 +185,8 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      */
     function destoryFetch(bytes32 rHash) public {
         uint256 lockedHeight = _lockedHeight[rHash];
-        require(lockedHeight > 0 && _unlockedHeight[rHash] == 0, "invaild hash");
+        require(lockedHeight > 0, "hash not locked");
+        require(_unlockedHeight[rHash] == 0, "hash has unlocked");
         require(msg.sender == _lockedUser[rHash], "wrong caller");
         require(block.number.sub(lockedHeight) > _destoryInterval, "not timeout");
 
