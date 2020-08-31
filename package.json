@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@openzeppelin/cli": "^2.8.2",
-    "@truffle/hdwallet-provider": "^1.0.42",
+    "@truffle/hdwallet-provider": "^1.0.43",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "eth-gas-reporter": "^0.2.17",
