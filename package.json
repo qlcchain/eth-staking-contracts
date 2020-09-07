@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts-ethereum-package": "3.0.0",
-    "@openzeppelin/truffle-upgrades": "^1.0.1"
+    "@openzeppelin/truffle-upgrades": "^1.0.2"
   },
   "devDependencies": {
     "@openzeppelin/cli": "^2.8.2",
