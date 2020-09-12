@@ -48,8 +48,8 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
 
         _issueInterval = 10;
         _destoryInterval = 20;
-        _minIssueAmount = 100000000;
-        _minDestroyAmount = 100000000;
+        _minIssueAmount = 10**8;
+        _minDestroyAmount = 10**8;
     }
 
     /**
