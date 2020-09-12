@@ -10,7 +10,7 @@ chai.use(chaiAsPromised);
 contract('QLCToken', async accounts => {
     let issueRHash = "0xc65db7f11f4f8e5b3a413c37987727d3cb30a0cf43c3bd2eeb7bb316d0bdfb64"
     let issueROrigin = "0xb44980807202aff0707cc4eebad4f9e47b4d645cf9f4320653ff62dcd575897b"
-    let issueAmount = 1000000
+    let issueAmount = 100000000000
 
     // it("Owner should have 0 QLCToken initially", function() {
     //   return QLCToken.deployed().then(function(instance) {
@@ -57,9 +57,9 @@ contract('QLCToken', async accounts => {
         await chai.assert.isRejected(instance.issueLock(issueRHash, issueAmount) , 'duplicated hash');
         await chai.assert.isRejected(instance.issueLock('0x0', issueAmount) , 'zero rHash')
 
-        let minAmount = 1
         let reHash = "0xb44980807202aff0707cc4eebad4f9e47b4d645cf9f4320653ff62dcd575897b"
-        await chai.assert.isRejected(instance.issueLock(reHash, minAmount-1) , 'too little amount') 
+        let reAmount = 1000000
+        await chai.assert.isRejected(instance.issueLock(reHash, reAmount) , 'too little amount') 
         await chai.assert.isRejected(instance.issueLock(reHash, issueAmount, {from: accounts[1]}) , 'Ownable: caller is not the owner');
     });
 
@@ -129,7 +129,7 @@ contract('QLCToken', async accounts => {
 
     let destoryRHash = "0xcabd59462f2932b25753e4a4fa1ddf766c46589dd70486bf4d99c39b3d23560a"
     let destoryROrigin = "0x9f7f18c7421a77abecafef26824aeda88f09110b396530f356e98141e4d333e5"
-    let destoryAmount = 300000
+    let destoryAmount = 30000000000
   
     it("destoryLock", async () => {
       let instance = await QLCToken.deployed();
@@ -156,10 +156,12 @@ contract('QLCToken', async accounts => {
     it("destoryLock exception", async () => {
       let instance = await QLCToken.deployed();
       let deHash = "0xb44980807202aff0707cc4eebad4f9e47b4d645cf9f4320653ff62dcd575897b"
+      let deAmount = 1000000
       await chai.assert.isRejected(instance.destoryLock('0x0', destoryAmount, accounts[0]) , 'zero rHash')
       // await chai.assert.isRejected(instance.destoryLock(deHash, 0, accounts[0]) , 'amount should more than zero') 
       await chai.assert.isRejected(instance.destoryLock(destoryRHash, destoryAmount, accounts[0]) , 'duplicated hash');
       await chai.assert.isRejected(instance.destoryLock(deHash, destoryAmount, accounts[2]) , 'wrong executor')
+      await chai.assert.isRejected(instance.destoryLock(deHash, deAmount, accounts[0]) , 'too little amount') 
       // await chai.assert.isRejected(instance.destoryLock(deHash, issueAmount+10, accounts[0]) , 'available balance is not enough')
     })
   
@@ -224,7 +226,33 @@ contract('QLCToken', async accounts => {
       assert.ok(timer[3] > 0 , "locked state")
       assert.ok(timer[4] > 0 , "unlocked state")
     })
-  
+
+    it("deleteHashTImer", async () => {
+      let instance = await QLCToken.deployed();
+      let bTimer1 = await instance.hashTimer(issueRHash);
+      assert.equal(bTimer1[0], issueROrigin, "lock origin"); 
+      let bTimer2 = await instance.hashTimer(destoryRHash);
+      assert.equal(bTimer2[0], destoryROrigin, "lock origin");  
+
+      await chai.assert.isRejected(instance.deleteHashTimer(issueRHash) , 'height limit')
+      await chai.assert.isRejected(instance.deleteHashTimer(issueRHash, {from: accounts[1]}) , 'Ownable: caller is not the owner')
+      for (let i = 0; i < 100; i++) {
+        await instance.approve(accounts[4], 1, {from: accounts[1]}) // add height
+      } 
+      await instance.deleteHashTimer(issueRHash) 
+      let aTimer = await instance.hashTimer(issueRHash);
+      assert.equal(aTimer[0], 0x0, "origin"); 
+      assert.equal(aTimer[1], 0, "amount");
+      assert.equal(aTimer[2], 0, "addr"); 
+      assert.equal(aTimer[3], 0, "lock height");  
+      assert.equal(aTimer[4], 0, "unlock height");  
+      let aTimer2 = await instance.hashTimer(destoryRHash);
+      assert.equal(aTimer2[0], destoryROrigin, "lock origin");  
+      
+      await instance.issueLock(issueRHash, issueAmount)
+    }); 
+
+
     let trAmount = 100000
   
     it("transaction", async () => {

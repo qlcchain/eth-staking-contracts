@@ -21,7 +21,8 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
 
     uint256 private _issueInterval;
     uint256 private _destoryInterval;
-    uint256 private _minAmount;
+    uint256 private _minIssueAmount;
+    uint256 private _minDestroyAmount;
 
     /**
      * @dev Emitted locker state changed
@@ -47,7 +48,8 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
 
         _issueInterval = 10;
         _destoryInterval = 20;
-        _minAmount = 1;
+        _minIssueAmount = 100000000;
+        _minDestroyAmount = 100000000;
     }
 
     /**
@@ -61,7 +63,7 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      */
     function issueLock(bytes32 rHash, uint256 amount) public onlyOwner {
         require(rHash != 0x0, "zero rHash");
-        require(amount >= _minAmount, "too little amount");
+        require(amount >= _minIssueAmount, "too little amount");
         require(_lockedHeight[rHash] == 0, "duplicated hash");
 
         _mint(address(this), amount);
@@ -86,7 +88,7 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
         uint256 lockedHeight = _lockedHeight[rHash];
         require(lockedHeight > 0, "hash not locked");
         require(_unlockedHeight[rHash] == 0, "hash has unlocked");
-        require(block.number.sub(lockedHeight) < _issueInterval, "already timeout");
+        require(block.number.sub(lockedHeight) <= _issueInterval, "already timeout");
         require(_isHashValid(rHash, rOrigin), "hash mismatch");
 
         _lockedOrigin[rHash] = rOrigin;
@@ -137,6 +139,7 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
     ) public {
         require(rHash != 0x0, "zero rHash");
         require(_lockedHeight[rHash] == 0, "duplicated hash");
+        require(amount >= _minDestroyAmount, "too little amount");
         require(executor == owner(), "wrong executor");
 
         require(transfer(address(this), amount), "transfer fail");
@@ -163,7 +166,7 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
         uint256 lockedHeight = _lockedHeight[rHash];
         require(lockedHeight > 0, "hash not locked");
         require(_unlockedHeight[rHash] == 0, "hash has unlocked");
-        require(block.number.sub(lockedHeight) < _issueInterval, "already timeout");
+        require(block.number.sub(lockedHeight) <= _destoryInterval, "already timeout");
         require(_isHashValid(rHash, rOrigin), "hash mismatch");
 
         _burn(address(this), _lockedAmount[rHash]);
@@ -233,5 +236,22 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
             _lockedHeight[rHash],
             _unlockedHeight[rHash]
         );
+    }
+
+    /**
+     * @dev Delete hash-timer locker
+     *
+     * Parameters:
+     * - `rHash` is the hash of locker
+     */
+    function deleteHashTimer(bytes32 rHash) public onlyOwner {
+       require(block.number.sub(_unlockedHeight[rHash]) > 100, "height limit"); 
+       delete _lockedOrigin[rHash];
+       delete _lockedAmount[rHash];
+       delete _lockedUser[rHash];
+       delete _lockedHeight[rHash];
+       delete _unlockedHeight[rHash];
+
+       emit LockedState(rHash, 6);
     }
 }
