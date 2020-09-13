@@ -17,11 +17,7 @@
     "compile": "npx truffle compile",
     "deploy": "npx truffle migrate --network rinkeby",
     "start": "npx ganache-cli -l 10000038 -i 1234 -e 100000 -a 10 -u 0 -g 1000000000 --allowUnlimitedContractSize -m \"$HDWALLET_MNEMONIC\"",
-    "session": "npx openzeppelin session --from $ADMIN_ADDRESS --network local --expires 7200 --timeout 3600",
-    "session-kovan": "npx openzeppelin session --from $ADMIN_ADDRESS --network kovan --expires 7200 --timeout 3600",
-    "session-rinkeby": "npx openzeppelin session --from $ADMIN_ADDRESS --network rinkeby --expires 7200 --timeout 3600",
-    "session-mainnet": "npx openzeppelin session --from $ADMIN_ADDRESS --network mainnet --expires 7200 --timeout 3600",
-    "push": "npx openzeppelin push",
+    "flatten": "npx truffle-flattener ./contracts/QLCToken.sol > ./build/QLCToken_flatten.sol",
     "version": "npx truffle version",
     "extract-abis": "npx truffle-extract -o .abis",
     "docs": "npx solidity-docgen -o docs -i contracts -s single",
@@ -52,7 +48,8 @@
     "solidity-docgen": "^0.5.6",
     "truffle": "5.1.43",
     "truffle-assertions": "^0.9.2",
-    "truffle-extract": "pooltogether/truffle-extract#2a57b6e63a8a2057aad0fec63ba255cd46e9ff1d"
+    "truffle-extract": "pooltogether/truffle-extract#2a57b6e63a8a2057aad0fec63ba255cd46e9ff1d",
+    "truffle-flattener": "^1.4.4"
   },
   "husky": {
     "hooks": {
