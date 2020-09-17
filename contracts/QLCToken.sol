@@ -48,8 +48,8 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
 
         _issueInterval = 10;
         _destoryInterval = 20;
-        _minIssueAmount = 10**8;
-        _minDestroyAmount = 10**8;
+        _minIssueAmount = 10**13;
+        _minDestroyAmount = 10**12;
     }
 
     /**
@@ -245,7 +245,7 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      * - `rHash` is the hash of locker
      */
     function deleteHashTimer(bytes32 rHash) public onlyOwner {
-       require(block.number.sub(_unlockedHeight[rHash]) > 100, "height limit"); 
+       require(_unlockedHeight[rHash] > 0, "not completed"); 
        delete _lockedOrigin[rHash];
        delete _lockedAmount[rHash];
        delete _lockedUser[rHash];
