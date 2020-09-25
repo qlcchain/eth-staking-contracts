@@ -24,7 +24,7 @@ contract('QLCToken', async accounts => {
       let instance = await QLCToken.deployed();
       assert.equal(await instance.balanceOf(accounts[0]), 0, "Owner should have 0 QLCToken initially"); 
       assert.equal(await instance.owner(), accounts[0], "wrong owner");
-      assert.equal(await instance.symbol(), "qlc", "wrong symbol"); 
+      assert.equal(await instance.symbol(), "QLC", "wrong symbol"); 
       assert.equal(await instance.totalSupply(), 0, "wrong totalSupply");  
       assert.equal(await instance.name(), "QLCToken", "wrong name");   
       assert.equal(await instance.decimals(), 8, "wrong decimals");   
