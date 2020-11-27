@@ -16,12 +16,10 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
     using ECDSA for bytes32;
 
     mapping(bytes32 => uint256) public lockedAmount;
-    mapping(address => uint256) public mintAmount;
-    mapping(address => uint256) public burnAmount;
     
     /**
      * @dev Emitted Mint Info
-     *d
+     *
      * Parameters:
      * - `user`: index, user address
      * - `nep5Hash`: neo transaction hash
@@ -31,7 +29,7 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
 
     /**
      * @dev Emitted Burn Info
-     *d
+     *
      * Parameters:
      * - `user`: index, user address
      * - `nep5Hash`: nep5 token receiver address
@@ -71,7 +69,6 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
 
         _mint(msg.sender, amount);
         lockedAmount[nep5Hash] = amount;
-        mintAmount[msg.sender] = mintAmount[msg.sender].add(amount);
         emit Mint(msg.sender, nep5Hash, amount);
     }
 
@@ -86,7 +83,6 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
     function burn(string memory nep5Addr, uint256 amount) public {
         require(bytes(nep5Addr).length == 34, "invalid nep5 address");
         _burn(msg.sender, amount);
-        burnAmount[msg.sender] = burnAmount[msg.sender].add(amount);
         emit Burn(msg.sender, nep5Addr, amount);
     }
 }
