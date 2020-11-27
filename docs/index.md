@@ -38,97 +38,54 @@ QLCToken contract realizes cross-chain with Nep5 QLC
 
 
 Initializes the QLCToken
+
 Parameters:
 - `name`: name of the token
 - `symbol`: the token symbol
 
-### `issueLock(bytes32 rHash, uint256 amount)` (public)
+### `mint(uint256 amount, bytes32 nep5Hash, bytes signature)` (public)
 
 
 
-Issue `amount` token and locked by `rHash`
-Only callable by the Owner.
-Emits a {LockedState} event.
+mint `amount` token to user
+Emits a {Mint} event.
+
 Parameters:
-- `rHash` is the hash of locker, cannot be zero and duplicated
-- `amount` should not less than `_minAmount`
+- `amount` mint amount
+- `nep5Hash` neo transaction hash
+- `signature` owner's signature
 
-### `issueUnlock(bytes32 rHash, bytes32 rOrigin)` (public)
+### `burn(string nep5Addr, uint256 amount)` (public)
 
 
 
-caller provide locker origin text `rOrigin` to unlock token and release to his account
-`issueUnlock` must be executed after `issueLock` and the interval must less then `_issueInterval`
-Emits a {LockedState} event.
+burn `amount` from user
+Emits a {Burn} event.
+
 Parameters:
-- `rHash` is the hash of locker
-- `rOrigin` is the origin text of locker
-
-### `issueFetch(bytes32 rHash)` (public)
+- `nep5Addr` nep5 token receiver address
+- `amount` burn amount
 
 
+### `Mint(address user, bytes32 nep5Hash, uint256 amount)`
 
-`issueFetch` must be executed after `issueLock` and the interval must more then `_issueInterval`
-destory the token locked by `rHash`
-Only callable by the Owner.
-Emits a {LockedState} event.
+
+
+Emitted Mint Info
+d
 Parameters:
-- `rHash` is the hash of locker
+- `user`: index, user address
+- `nep5Hash`: neo transaction hash
+- `amount`: mint amount
 
-### `destoryLock(bytes32 rHash, uint256 amount, address executor)` (public)
+### `Burn(address user, string nep5Addr, uint256 amount)`
 
 
 
-lock caller's `amount` token by `rHash`
-Emits a {LockedState} event.
+Emitted Burn Info
+d
 Parameters:
-- `rHash` is the hash of locker, cannot be zero and duplicated
-- `amount` should more than zero.
-- `executor` should be owner's address
-
-### `destoryUnlock(bytes32 rHash, bytes32 rOrigin)` (public)
-
-
-
-Destory `rHash` locked token by origin text `rOrigin`
-`destoryUnlock` must be executed after `destoryLock` and the interval must less then `_destoryInterval`
-Only callable by the Owner.
-Emits a {LockedState} event.
-Parameters:
-- `rHash` is the hash of locker
-- `rOrigin` is the origin text of locker
-
-### `destoryFetch(bytes32 rHash)` (public)
-
-
-
-`destoryFetch` must be executed after `destoryLock` and the interval must more then `_destoryInterval`
-unlock token and return back to caller
-Emits a {LockedState} event.
-Parameters:
-- `rHash` is the hash of locker
-
-### `hashTimer(bytes32 rHash) → bytes32, uint256, address, uint256, uint256` (public)
-
-
-
-Return detail info of hash-timer locker
-Parameters:
-- `rHash` is the hash of locker
-Returns:
-- the origin text of locker
-- locked amount
-- account with locked token
-- locked block height
-- unlocked block height
-
-
-### `LockedState(bytes32 rHash, uint256 state)`
-
-
-
-Emitted locker state changed
-Parameters:
-- `rHash`: index, the hash of locker
-- `state`: locker state, 0:issueLock, 1:issueUnlock, 2:issueFetch, 3:destoryLock, 4:destoryUnlock, 5:destoryFetch
+- `user`: index, user address
+- `nep5Hash`: nep5 token receiver address
+- `amount`: burn amount
 
