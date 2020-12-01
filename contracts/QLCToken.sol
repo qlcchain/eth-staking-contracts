@@ -3,7 +3,6 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.sol";
@@ -12,7 +11,6 @@ import "@openzeppelin/contracts-ethereum-package/contracts/cryptography/ECDSA.so
  * @notice QLCToken contract realizes cross-chain with Nep5 QLC
  */
 contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
-    using SafeMath for uint256;
     using ECDSA for bytes32;
 
     mapping(bytes32 => uint256) public lockedAmount;
@@ -67,8 +65,8 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
         bytes32 h = sha256(rBytes);	
         require(h.recover(signature) == owner(), "invalid signature");
 
+       lockedAmount[nep5Hash] = amount;
         _mint(msg.sender, amount);
-        lockedAmount[nep5Hash] = amount;
         emit Mint(msg.sender, nep5Hash, amount);
     }
 
