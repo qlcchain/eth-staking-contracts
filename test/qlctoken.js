@@ -1,6 +1,7 @@
 const QLCToken = artifacts.require("QLCToken");
 const {sha256, solidityPack, hexlify} = require("ethers/utils");
 const truffleAssert = require('truffle-assertions');
+const { BN } = require('@openzeppelin/test-helpers');
 const chai = require('chai');
 const util = require("ethereumjs-util");
 const chaiAsPromised = require('chai-as-promised')
@@ -22,15 +23,24 @@ contract('QLCToken', ([alice, bob, carol, james])  => {
     });
 
     const mintAmount = 2000000000
+
+    const a = web3.eth.accounts.privateKeyToAccount(
+      "0x67652fa52357b65255ac38d0ef8997b5608527a7c1d911ecefb8bc184d74e92e"
+    );
+    const tomKey = a.privateKey;
+    const tom = a.address;
+
     it("mint", async () => {
-        const a = web3.eth.accounts.privateKeyToAccount(
-          "0x67652fa52357b65255ac38d0ef8997b5608527a7c1d911ecefb8bc184d74e92e"
-        );
-        const tomKey = a.privateKey;
-        const tom = a.address;
+
         web3.eth.personal.importRawKey(tomKey, "");
         web3.eth.personal.unlockAccount(tom, "", 60000);
- 
+        await web3.eth.sendTransaction({
+          from: alice,
+          to: tom,
+          value: expandTo18Decimals(20),
+        }); 
+
+
         console.log("tom address: ", tom)
         console.log("bob address(mint address):", bob)
  
@@ -79,6 +89,7 @@ contract('QLCToken', ([alice, bob, carol, james])  => {
         assert.equal(await this.instance.totalSupply(), mintAmount, "total amount is incorrect");
 
         await chai.assert.isRejected(this.instance.mint(mintAmount, nep5Hash, signHex, {from: bob}), 'duplicated hash');
+
     });
 
 
@@ -124,6 +135,30 @@ contract('QLCToken', ([alice, bob, carol, james])  => {
       await this.instance.transferFrom(bob, alice, tfAmount, {from: james})
       assert.equal(await this.instance.balanceOf(bob), oBalancea - tfAmount, "amount is incorrect");
       assert.equal(await this.instance.balanceOf(alice), tfAmount, "amount is incorrect");
-    }); 
+    });
+    
+    
+    it("circuitBraker", async () => {
+      let nep5Hash = "0x4c5aac8222797c7a85f7d015510ce8232f1229e0d3c487f60f74058486065e4e"
+      let signHex = "0x5f5e10" 
+      await chai.assert.isRejected(this.instance.mint(mintAmount, nep5Hash,  signHex), 'invalid signature'); 
+
+      let owner = await this.instance.owner()
+      console.log("owner: ", owner)
+      
+      await chai.assert.isRejected(this.instance.circuitBraker({from: bob}), "Ownable: caller is not the owner"); 
+      await this.instance.circuitBraker({from: tom})
+      await chai.assert.isRejected(this.instance.mint(mintAmount, nep5Hash,  signHex), '');
+      await this.instance.circuitBraker({from: tom})
+      await chai.assert.isRejected(this.instance.mint(mintAmount, nep5Hash,  signHex), 'invalid signature'); 
+    })
+
 });
 
+function expandTo18Decimals(num) {
+  return new BN(num).mul(toBig(10).pow(toBig(18)))
+}
+
+function toBig(num) {
+  return new BN(num)
+}

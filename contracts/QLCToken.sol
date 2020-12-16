@@ -14,7 +14,12 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
     using ECDSA for bytes32;
 
     mapping(bytes32 => uint256) public lockedAmount;
-    
+
+    bool public active;
+    modifier isActive {
+        require(active == true);
+        _;
+    }
     /**
      * @dev Emitted Mint Info
      *
@@ -47,6 +52,7 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
         __Ownable_init();
         _setupDecimals(8);
         _mint(msg.sender, 0);
+        active = true;
     }
 
 
@@ -59,7 +65,7 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      * - `nep5Hash` neo transaction hash
      * - `signature` owner's signature 
      */
-    function mint(uint256 amount, bytes32 nep5Hash, bytes memory signature) public {
+    function mint(uint256 amount, bytes32 nep5Hash, bytes memory signature) public isActive {
         require(lockedAmount[nep5Hash] == 0, "duplicated hash");
         bytes memory rBytes = abi.encodePacked(amount, msg.sender, nep5Hash);
         bytes32 h = sha256(rBytes);	
@@ -78,9 +84,13 @@ contract QLCToken is Initializable, ERC20UpgradeSafe, OwnableUpgradeSafe {
      * - `nep5Addr` nep5 token receiver address
      * - `amount` burn amount
      */
-    function burn(string memory nep5Addr, uint256 amount) public {
+    function burn(string memory nep5Addr, uint256 amount) public isActive {
         require(bytes(nep5Addr).length == 34, "invalid nep5 address");
         _burn(msg.sender, amount);
         emit Burn(msg.sender, nep5Addr, amount);
+    }
+
+    function circuitBraker() public onlyOwner {
+        active = !active;
     }
 }
