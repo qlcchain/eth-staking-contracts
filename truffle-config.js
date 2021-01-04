@@ -30,7 +30,7 @@ module.exports = {
       network_id: 4,
       skipDryRun: true,
       networkCheckTimeout: 10000,
-      gas: 4612388  // Gas limit used for deploys
+      gas: 7000000  // Gas limit used for deploys
     },
 
     mainnet: {
