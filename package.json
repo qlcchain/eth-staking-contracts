@@ -42,7 +42,7 @@
     "mocha-junit-reporter": "^2.0.0",
     "prettier": "^2.2.1",
     "prettier-plugin-solidity": "^1.0.0-beta.6",
-    "solc": "0.8.2",
+    "solc": "0.8.5",
     "solhint": "^3.3.4",
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.7.16",
