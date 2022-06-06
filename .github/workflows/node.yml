@@ -20,7 +20,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: npm i -g codecov && npx truffle run coverage && codecov
-      - uses: actions/cache@v2.1.4
+      - uses: actions/cache@v3.0.3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
