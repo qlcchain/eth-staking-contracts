@@ -47,7 +47,7 @@
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.7.16",
     "solidity-docgen": "^0.5.11",
-    "truffle": "5.2.5",
+    "truffle": "5.7.5",
     "truffle-assertions": "^0.9.2",
     "truffle-extract": "pooltogether/truffle-extract#2a57b6e63a8a2057aad0fec63ba255cd46e9ff1d",
     "truffle-flattener": "^1.5.0"
